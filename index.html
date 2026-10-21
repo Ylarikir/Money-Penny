@@ -1,0 +1,1151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Money Penny</title>
+<meta name="theme-color" content="#0F1C24">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Money Penny">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="icons/favicon.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
+<script src="supabase-adapter.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0F1C24;--surface:#132430;--surface2:#18303F;--ink:#FFFFFF;--text:#EEF2F0;--muted:#7F9AA6;--soft:#C9D3D8;--line:#22384A;
+  --accent:#9BF9C2;--accent-ink:#0F1C24;--accent-soft:rgba(155,249,194,.12);--teal:#1AA6B7;--late:#1AA6B7;
+  --warn:#F5C979;--warn-soft:rgba(245,201,121,.12);--danger:#FF8F85;--danger-soft:rgba(255,143,133,.12);
+  --shadow:0 12px 40px rgba(0,0,0,.45);
+  --r-sm:8px;--r:12px;--r-lg:16px;--logo-filter:none;
+  color-scheme:dark;box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark}}
+:root[data-theme="dark"]{color-scheme:dark}
+:root[data-theme="light"]{
+  --bg:#EEF2F0;--surface:#FFFFFF;--surface2:#F4F7F6;--ink:#0F1C24;--text:#132430;--muted:#4A5C68;--soft:#4A5C68;--line:#C9D3D8;
+  --accent:#0F1C24;--accent-ink:#9BF9C2;--accent-soft:rgba(26,166,183,.12);--teal:#137F8C;--late:#1AA6B7;
+  --warn:#8A5A00;--warn-soft:#FBF0DA;--danger:#B23A31;--danger-soft:#FBE7E5;--shadow:0 12px 40px rgba(15,28,36,.18);--logo-filter:invert(1);color-scheme:light}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px);background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"Poppins",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:14.5px;line-height:1.55;font-variant-numeric:tabular-nums}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--teal)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1240px;margin:0 auto;padding:0 28px}
+.mint{color:var(--accent)}
+:root[data-theme="light"] .mint{color:var(--teal)}
+
+/* Header */
+header.top{background:var(--bg)}
+.brandbar{display:flex;align-items:center;gap:14px;padding-top:24px}
+.brandbar img{height:22px;width:auto;filter:var(--logo-filter)}
+.brandbar .div{width:1px;height:20px;background:var(--line)}
+.brandbar .lbl{font-size:11.5px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+:root[data-theme="light"] .brandbar .lbl{color:var(--teal)}
+.top-row{display:flex;align-items:flex-start;gap:12px;padding-top:26px;flex-wrap:wrap}
+.round-name{font-size:34px;font-weight:800;letter-spacing:-.01em;line-height:1.1;margin:0;text-transform:uppercase;color:var(--ink)}
+.round-sub{color:var(--soft);font-size:14px;margin-top:6px;font-style:italic;font-weight:500}
+.sp{flex:1}
+.meter-block{padding:22px 0 20px;display:grid;grid-template-columns:minmax(220px,300px) 1fr;gap:16px;align-items:stretch}
+.meter-card{background:var(--accent);color:var(--accent-ink);border-radius:var(--r);padding:16px 18px}
+.meter-card .k{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.meter-big{font-size:38px;font-weight:800;letter-spacing:-.02em;line-height:1.1;margin-top:4px}
+.meter-of{font-size:13px;font-weight:500}
+.meter-panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;display:flex;flex-direction:column;justify-content:center}
+.meter{position:relative;height:12px;border-radius:6px;background:var(--bg);border:1px solid var(--line)}
+.meter .seg{position:absolute;top:0;bottom:0;left:0;border-radius:6px 0 0 6px}
+.meter .c{background:var(--accent)}
+:root[data-theme="light"] .meter .c{background:var(--teal)}
+.meter .l{background:repeating-linear-gradient(135deg,var(--late) 0 6px,transparent 6px 10px);border-radius:0}
+.meter .tgt{position:absolute;top:-6px;bottom:-6px;width:2px;background:var(--ink)}
+.legend{display:flex;gap:18px;flex-wrap:wrap;margin-top:12px;font-size:12.5px;color:var(--soft)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.legend .k-c{background:var(--accent)}
+:root[data-theme="light"] .legend .k-c{background:var(--teal)}
+.legend .k-l{background:repeating-linear-gradient(135deg,var(--late) 0 3px,transparent 3px 5px);border:1px solid var(--late)}
+.legend .k-t{background:var(--ink);width:2px}
+nav.tabs{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:2px 0 4px}
+nav.tabs::-webkit-scrollbar{display:none}
+.tab{border:1px solid var(--teal);background:transparent;padding:6px 16px;border-radius:999px;font-weight:600;font-size:13px;color:var(--ink);cursor:pointer;white-space:nowrap}
+.tab:hover{background:var(--accent-soft)}
+.tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.tab .n{font-weight:500;opacity:.7;margin-left:6px}
+
+main.wrap{padding-top:28px;padding-bottom:60px}
+header.top .wrap{padding-bottom:4px}
+.btn{border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:8px 16px;border-radius:999px;font-weight:600;font-size:13.5px;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--teal)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.06)}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--accent)}
+:root[data-theme="light"] .btn.ghost{color:var(--teal)}
+.btn.ghost:hover{background:var(--accent-soft)}
+.btn.danger{color:var(--danger);border-color:transparent;background:transparent}
+.btn.danger.armed{background:var(--danger);color:var(--bg)}
+.btn.sm{padding:5px 12px;font-size:12.5px}
+.ro .w{display:none!important}
+
+.grid{display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px 18px 14px}
+.panel h2,.section h2{font-size:11.5px;font-weight:700;margin:0;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+:root[data-theme="light"] .panel h2,:root[data-theme="light"] .section h2{color:var(--teal)}
+.panel-head{display:flex;align-items:center;gap:10px;margin-bottom:10px;min-height:28px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:20px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 18px}
+.stat b{display:block;font-size:30px;font-weight:800;color:var(--ink);line-height:1.2}
+.stat span{color:var(--soft);font-size:12.5px}
+.stat.alert{border-color:var(--danger)}
+.stat.alert b{color:var(--danger)}
+.empty{color:var(--soft);font-size:13.5px;padding:10px 0}
+.empty .btn{margin-top:8px}
+
+ul.clean{list-style:none;margin:0;padding:0}
+.task{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.task:first-child{border-top:0}
+.task.done .ttl{text-decoration:line-through;color:var(--muted)}
+.chk{position:relative;flex:none;margin-top:3px}
+.chk input{appearance:none;width:18px;height:18px;border:2px solid var(--muted);border-radius:5px;margin:0;cursor:pointer;display:block;background:transparent}
+.chk input:checked{background:var(--accent);border-color:var(--accent)}
+.chk input:checked::after{content:"";position:absolute;left:6px;top:2px;width:5px;height:10px;border:solid var(--accent-ink);border-width:0 2px 2px 0;transform:rotate(45deg)}
+.tmain{flex:1;min-width:0}
+.linkish{border:0;background:none;padding:0;text-align:left;cursor:pointer;font-weight:500;color:var(--ink)}
+.linkish:hover{text-decoration:underline;text-decoration-color:var(--accent)}
+.meta{display:flex;gap:8px;flex-wrap:wrap;color:var(--muted);font-size:12.5px;margin-top:3px;align-items:center}
+.chip{border:1px solid var(--teal);background:transparent;border-radius:999px;padding:0 10px;font-size:12px;font-weight:600;cursor:pointer;color:var(--ink)}
+.chip:hover{background:var(--accent-soft)}
+.due{font-size:12.5px;color:var(--soft);white-space:nowrap;margin-top:3px}
+.due.od{color:var(--danger);font-weight:600}
+.due.soon{color:var(--warn);font-weight:600}
+.group-label{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:18px 0 4px}
+.group-label.od{color:var(--danger)}
+
+.pstrip{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;margin-bottom:16px;scrollbar-width:thin}
+.pcard{flex:0 0 auto;min-width:140px;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:10px 14px;cursor:pointer;display:flex;flex-direction:column;gap:2px}
+.pcard:hover{border-color:var(--teal)}
+.pcard.on{background:var(--accent);border-color:var(--accent)}
+.pcard .pn{font-weight:700;color:var(--ink)}
+.pcard .pc{font-size:12.5px;color:var(--soft)}
+.pcard.on .pn,.pcard.on .pc{color:var(--accent-ink)}
+.pcard em{font-style:normal;color:var(--danger);font-weight:600;margin-left:4px}
+.pcard.on em{color:var(--accent-ink);text-decoration:underline}
+.pchip{border:0;background:none;padding:0;font-size:12.5px;color:var(--soft);cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}
+.pchip:hover{color:var(--accent)}
+.disc{padding:12px 0;border-top:1px solid var(--line)}
+.disc:first-child{border-top:0}
+.disc-head{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.disc-date{font-weight:700;font-size:12.5px;white-space:nowrap;color:var(--ink)}
+.kind{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent-ink);background:var(--accent);border-radius:999px;padding:0 8px}
+.disc p{margin:6px 0 0;white-space:pre-wrap;color:var(--soft);font-size:13.5px}
+.disc,.disc p,.next,.summary,.meta,.tmain,.contact .who{overflow-wrap:anywhere;word-break:break-word;min-width:0}
+.xlink{font-weight:600;text-decoration:none;border-bottom:1px solid currentColor;overflow-wrap:anywhere}
+.xlink:hover{color:var(--accent)}
+.next{margin-top:8px;padding:9px 12px;border:1px solid var(--line);border-left:3px solid var(--accent);background:var(--bg);border-radius:var(--r-sm);font-size:13px;white-space:pre-wrap;font-style:italic;color:var(--soft)}
+.next b{color:var(--accent);font-style:normal}
+:root[data-theme="light"] .next b{color:var(--teal)}
+.prep{font-size:12.5px;font-weight:600;color:var(--soft)}
+.prep.ok{color:var(--accent)}
+:root[data-theme="light"] .prep.ok{color:var(--teal)}
+.prep.od{color:var(--danger)}
+.prep.soon{color:var(--warn)}
+.meta .btn.sm{padding:1px 10px;font-size:12px}
+
+.stage{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;white-space:nowrap;color:var(--ink)}
+.stage::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--accent);opacity:var(--o,1)}
+:root[data-theme="light"] .stage::before{background:var(--teal)}
+.stage.passed{color:var(--muted)}
+.stage.passed::before{background:var(--muted)}
+
+.toolbar{display:flex;gap:10px;align-items:center;margin-bottom:18px;flex-wrap:wrap}
+.toolbar h1{font-size:26px;margin:0;font-weight:800;text-transform:uppercase;color:var(--ink);line-height:1.15}
+.search{flex:0 1 280px;padding:8px 14px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--ink)}
+.search::placeholder{color:var(--muted)}
+.board{display:flex;gap:12px;overflow-x:auto;padding-bottom:12px;align-items:flex-start}
+.col{flex:0 0 240px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px;min-height:120px}
+.col.over{border-color:var(--accent);background:var(--accent-soft)}
+.col-head{display:flex;align-items:baseline;gap:6px;margin:0 2px 12px}
+.col-head b{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+:root[data-theme="light"] .col-head b{color:var(--teal)}
+.col-head span{color:var(--muted);font-size:12px}
+.col-sum{margin-left:auto;font-size:12px;color:var(--soft);font-weight:600}
+.card{background:var(--bg);border:1px solid var(--line);border-radius:var(--r-sm);padding:11px 12px;margin-bottom:8px;cursor:pointer}
+.card:hover{border-color:var(--teal)}
+.card[draggable="true"]{cursor:grab}
+.card .nm{font-weight:700;line-height:1.3;color:var(--ink)}
+.card .sub{font-size:12.5px;color:var(--soft)}
+.card .nx{font-size:12px;margin-top:6px;color:var(--muted);font-style:italic}
+.card .nx.none{color:var(--warn)}
+.card .nx.od{color:var(--danger)}
+
+.tbl-wrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+table{border-collapse:collapse;width:100%;min-width:760px}
+th,td{text-align:left;padding:11px 16px;border-top:1px solid var(--line);vertical-align:top;font-size:13.5px}
+thead th{border-top:0;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);font-weight:700}
+:root[data-theme="light"] thead th{color:var(--teal)}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:var(--surface2)}
+td .firm{font-weight:700;color:var(--ink)}
+.person{margin-bottom:6px;color:var(--ink)}
+.person:last-child{margin-bottom:0}
+.person a{font-size:12.5px;margin-right:10px;text-decoration:none}
+.person a:hover{text-decoration:underline}
+.num{text-align:right;white-space:nowrap;color:var(--ink)}
+
+.ms{list-style:none;margin:0;padding:0;position:relative}
+.ms li{position:relative;display:flex;gap:14px;padding:0 0 18px 0}
+.ms li::before{content:"";position:absolute;left:12px;top:26px;bottom:0;border-left:2px dashed var(--line)}
+.ms li:last-child::before{display:none}
+.dot{flex:none;width:26px;height:26px;border-radius:50%;border:2px solid var(--teal);background:var(--bg);display:grid;place-items:center;font-size:11px;font-weight:700;color:var(--ink);cursor:pointer;padding:0}
+.ms li.done .dot{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.ms li.past:not(.done) .dot{border-color:var(--danger);color:var(--danger)}
+.ms .when{font-size:12.5px;color:var(--soft)}
+.ms li.today-mark{padding-bottom:14px}
+.ms li.today-mark .dot{width:26px;height:2px;border:0;border-radius:0;background:var(--accent);margin-top:12px;cursor:default}
+.ms li.today-mark span{font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:var(--accent)}
+.act-day{font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:var(--muted);margin:16px 0 4px}
+.act{display:flex;gap:10px;padding:5px 0;font-size:13.5px;color:var(--soft)}
+.act time{color:var(--muted);font-size:12.5px;width:44px;flex:none}
+
+.backdrop{position:fixed;inset:0;background:rgba(5,10,14,.6);opacity:0;pointer-events:none;transition:opacity .2s;z-index:20}
+.backdrop.on{opacity:1;pointer-events:auto}
+aside.drawer{position:fixed;top:0;right:0;bottom:0;width:min(580px,100%);background:var(--bg);border-left:1px solid var(--line);z-index:21;transform:translateX(100%);transition:transform .25s ease;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+aside.drawer.on{transform:none;box-shadow:var(--shadow)}
+.dr-head{background:var(--surface);border-bottom:1px solid var(--line);padding:20px 22px 16px}
+.dr-title{display:flex;gap:10px;align-items:flex-start}
+.dr-title h2{margin:0;font-size:22px;font-weight:800;text-transform:uppercase;line-height:1.2;flex:1;color:var(--ink)}
+.dr-body{overflow-y:auto;padding:18px 22px 40px;flex:1}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px 18px;margin:14px 0 0;font-size:14px}
+.facts dt{color:var(--muted);font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:600}
+.facts dd{margin:0;font-weight:600;overflow-wrap:anywhere;color:var(--ink)}
+.stage-sel{padding:6px 12px;border:1px solid var(--teal);border-radius:999px;background:var(--bg);color:var(--ink);font-weight:600;font-size:13px}
+.section{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;margin-bottom:14px}
+.section .panel-head{margin-bottom:6px}
+.summary{white-space:pre-wrap;margin:6px 0 0;font-size:13.5px;color:var(--soft)}
+.contact{padding:10px 0;border-top:1px solid var(--line);display:flex;gap:10px}
+.contact:first-child{border-top:0}
+.contact .who{flex:1;min-width:0}
+.contact .who b{display:block;color:var(--ink)}
+.contact .lines{font-size:13px;display:flex;flex-direction:column}
+.contact .lines a{text-decoration:none;overflow-wrap:anywhere}
+.contact .lines a:hover{text-decoration:underline}
+details.more summary{cursor:pointer;color:var(--muted);font-size:12.5px;margin-top:6px}
+
+dialog{border:1px solid var(--line);border-radius:var(--r-lg);padding:0;width:min(540px,calc(100% - 24px));background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
+dialog::backdrop{background:rgba(5,10,14,.65)}
+.form{padding:24px;display:flex;flex-direction:column;gap:12px;max-height:calc(100dvh - 40px);overflow-y:auto}
+.form h2{margin:0 0 4px;font-size:20px;font-weight:800;text-transform:uppercase;color:var(--ink)}
+.form label{display:flex;flex-direction:column;gap:5px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--soft)}
+.form input,.form select,.form textarea{padding:9px 12px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--bg);font-size:14px;font-weight:400;letter-spacing:0;text-transform:none;color:var(--ink)}
+.form input::placeholder,.form textarea::placeholder{color:var(--muted)}
+.form textarea{resize:vertical;min-height:90px}
+.t24{display:flex;align-items:center;gap:6px}.t24 select{flex:1;min-width:0}.t24 b{color:var(--ink);font-weight:700}
+.form .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form .err{color:var(--danger);font-size:12px;font-weight:600;text-transform:none;letter-spacing:0}
+.form [aria-invalid="true"]{border-color:var(--danger)}
+.form-actions{display:flex;gap:8px;align-items:center;margin-top:6px}
+.hint{font-size:11px;color:var(--muted);font-weight:500;text-transform:none;letter-spacing:0}
+
+.notice{background:var(--warn-soft);color:var(--warn);border-radius:var(--r-sm);padding:8px 12px;font-size:13px;margin-top:14px}
+.foot{color:var(--muted);font-size:12px;padding:20px 28px}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--accent);color:var(--accent-ink);font-weight:600;padding:10px 18px;border-radius:999px;font-size:13.5px;z-index:40;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90%}
+.toast.on{opacity:1}
+.loading{padding:60px 0;text-align:center;color:var(--muted)}
+@media (max-width:720px){
+  .round-name{font-size:24px}.meter-big{font-size:30px}
+  .meter-block{grid-template-columns:1fr}
+  .form .row2{grid-template-columns:1fr}
+  .wrap{padding:0 16px}.foot{padding:20px 16px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="brandbar"><img alt="IOXIO" src="data:image/png;base64,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"><span class="div"></span><span class="lbl">Money Penny</span></div>
+    <div class="top-row">
+      <div>
+        <h1 class="round-name" id="roundName">Investor round</h1>
+        <div class="round-sub" id="roundSub"></div>
+      </div>
+      <span class="sp"></span>
+      <button class="btn sm" data-act="export">Export report</button>
+      <button class="btn sm w" data-act="edit-round">Round settings</button>
+      <button class="btn sm w" data-act="add-meeting">Schedule meeting</button>
+      <button class="btn sm primary w" data-act="add-investor">Add investor</button>
+    </div>
+    <div class="meter-block" id="meter"></div>
+    <nav class="tabs" role="tablist" id="tabs"></nav>
+  </div>
+</header>
+<main class="wrap" id="view"><div class="loading">Loading your round…</div></main>
+<div class="foot wrap" id="foot"></div>
+
+<div class="backdrop" id="backdrop" data-act="close-drawer"></div>
+<aside class="drawer" id="drawer" aria-hidden="true" aria-label="Investor details"></aside>
+<dialog id="dlg"></dialog>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+/* ---------- constants ---------- */
+const STAGES=[["target","Target list"],["contacted","Contacted"],["meeting","In talks"],["dd","Due diligence"],["termsheet","Term sheet"],["committed","Committed"],["closed","Money in"],["passed","Passed"]];
+const STAGE_O={target:.25,contacted:.4,meeting:.55,dd:.7,termsheet:.85,committed:1,closed:1,passed:1};
+const TYPES=["VC","Angel","Corporate","Family office","Public funding","Other"];
+const KINDS=["Meeting","Call","Email","Event","Other"];
+const MKINDS=["Meeting","Call","Event","Other"];
+const DEFAULT_CHECKLIST="- Check the latest deck version\n- Update the financial model and key numbers\n- Check data room access for the attendees\n- Read up on the investor and the people attending\n- Agree who presents what, and the ask";
+const COLS=["investors","discussions","tasks","milestones","meetings","activity","stakeholders","shlog","shtasks","shmeetings"];
+const LS_KEY="investor-round-crm-v1";
+
+/* ---------- state ---------- */
+const S={round:{name:"Investor round",target:null,currency:"EUR",closeDate:""},investors:{},discussions:{},tasks:{},milestones:{},meetings:{},activity:{},stakeholders:{},shlog:{},shtasks:{},shmeetings:{}};
+const UI={tab:"overview",openInv:null,taskFilter:"open",person:"",search:"",sort:(()=>{try{return localStorage.getItem("crm-invsort")||"name"}catch(e){return "name"}})(),ready:false};
+function invSort(a,b){if(UI.sort==="ticket"){const d=(Number(b.ticket)||0)-(Number(a.ticket)||0);if(d)return d}return String(a.name||"").localeCompare(String(b.name||""),"fi",{sensitivity:"base"})}
+function sortCtl(){return `<div role="group" aria-label="Sort investors" style="display:flex;gap:4px">${[["name","A–Z"],["ticket","Biggest ticket first"]].map(([k,l])=>`<button class="btn sm ${UI.sort===k?"primary":""}" data-sort="${k}" aria-pressed="${UI.sort===k}">${l}</button>`).join("")}</div>`}
+let db=null,RO=false,mode="local";
+
+/* ---------- helpers ---------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+const nowIso=()=>new Date().toISOString();
+const today=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
+const addDays=(iso,n)=>{const d=new Date(iso+"T00:00");d.setDate(d.getDate()+n);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
+const list=c=>Object.values(S[c]);
+const stageLabel=k=>(STAGES.find(s=>s[0]===k)||[,k])[1];
+function fmtDate(iso){if(!iso)return"";const d=new Date(iso.length<=10?iso+"T00:00":iso);if(isNaN(d))return iso;const o={day:"numeric",month:"short"};if(d.getFullYear()!==new Date().getFullYear())o.year="numeric";return d.toLocaleDateString("en-GB",o)}
+function fmtMoney(n,short){const cur=S.round.currency||"EUR";if(n==null||n==="")return"–";n=Number(n);try{if(short&&Math.abs(n)>=1e6)return new Intl.NumberFormat("en-IE",{style:"currency",currency:cur,maximumFractionDigits:2,notation:"compact"}).format(n);return new Intl.NumberFormat("en-IE",{style:"currency",currency:cur,maximumFractionDigits:0}).format(n)}catch(e){return n.toLocaleString()+" "+cur}}
+function daysBetween(a,b){return Math.round((new Date(b+"T00:00")-new Date(a+"T00:00"))/864e5)}
+function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("on");clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove("on"),2600)}
+function stagePill(k){return `<span class="stage ${k==="passed"?"passed":""}" style="--o:${STAGE_O[k]||1}">${esc(stageLabel(k))}</span>`}
+
+function linkify(s){return esc(s).replace(/https?:\/\/[^\s<]+/g,u=>{let url=u.replace(/[).,;:!?]+$/,""),tail=u.slice(url.length),label;
+  try{const x=new URL(url.replace(/&amp;/g,"&")),host=x.hostname.replace(/^www\./,""),p=x.pathname;
+    label=host==="docs.google.com"?(p.startsWith("/presentation")?"Google Slides":p.startsWith("/spreadsheets")?"Google Sheets":p.startsWith("/document")?"Google Doc":p.startsWith("/forms")?"Google Form":"Google Docs"):host==="drive.google.com"?"Google Drive file":(host+(p.length>1?(p.length>24?p.slice(0,22)+"…":p):""));if(label.length>34)label=label.slice(0,32)+"…"}catch(e){label=url.slice(0,32)+"…"}
+  return `<a href="${url}" target="_blank" rel="noopener" data-stop title="${url}" class="xlink">${label} ↗</a>${tail}`})}
+/* ---------- storage ---------- */
+function loadLocal(){try{const r=localStorage.getItem(LS_KEY);if(r){const d=JSON.parse(r);for(const k in d)S[k]=d[k]}}catch(e){}}
+function saveLocal(){if(db)return;try{localStorage.setItem(LS_KEY,JSON.stringify(S))}catch(e){}}
+function handleErr(e){
+  const code=e&&e.code;
+  if(code==="invalid_argument"){setRO(true);toast("You can view this tracker but not change it.")}
+  else if(code==="quota_exceeded")toast("Storage is full. Delete some old entries to add new ones.");
+  else if(code==="resource_exhausted")toast("Too many changes at once. Wait a moment and try again.");
+  else toast("Couldn't save that change. Check your connection and try again.");
+}
+async function put(col,id,data){
+  S[col][id]=data;render();
+  if(db){try{await db.collection(col).doc(id).set(data)}catch(e){if(e&&e.code==="unavailable"){await new Promise(r=>setTimeout(r,600+Math.random()*600));try{await db.collection(col).doc(id).set(data)}catch(e2){handleErr(e2)}}else handleErr(e)}}
+  else saveLocal();
+}
+async function del(col,id){
+  delete S[col][id];render();
+  if(db){try{await db.collection(col).doc(id).delete()}catch(e){handleErr(e)}}else saveLocal();
+}
+async function putRound(data){
+  S.round=data;render();
+  if(db){try{await db.doc("round/main").set(data)}catch(e){handleErr(e)}}else saveLocal();
+}
+function logAct(text,investorId,kind){const id=uid();put("activity",id,{id,text,investorId:investorId||"",kind:kind||"note",at:nowIso()})}
+function setRO(v){RO=v;document.body.classList.toggle("ro",v);render()}
+
+/* ---------- derived ---------- */
+function invTasks(id){return list("tasks").filter(t=>t.investorId===id)}
+function invDiscs(id){return list("discussions").filter(d=>d.investorId===id).sort((a,b)=>(b.date||"").localeCompare(a.date||"")||(b.createdAt||"").localeCompare(a.createdAt||""))}
+function lastContact(id){const d=invDiscs(id)[0];return d?d.date:""}
+function nextTask(id){return invTasks(id).filter(t=>t.status!=="done").sort(byDue)[0]}
+function byDue(a,b){return (a.due||"9999").localeCompare(b.due||"9999")||(a.createdAt||"").localeCompare(b.createdAt||"")}
+function splitPeople(s){return String(s||"").split(/\s*(?:&|,|\/|\band\b|\bja\b)\s*/i).map(x=>x.trim()).filter(Boolean)}
+function allPeople(){const m=new Map();for(const o of [...list("tasks").map(t=>t.owner),...list("investors").map(i=>i.owner)])for(const p of splitPeople(o)){const k=p.toLowerCase();if(!m.has(k))m.set(k,p)}return [...m.values()].sort((a,b)=>a.localeCompare(b))}
+function matchPerson(t,p){if(!p)return true;const ps=splitPeople(t.owner);if(p==="__none")return !ps.length;return ps.some(x=>x.toLowerCase()===p.toLowerCase())}
+function personStrip(all){
+  const open=all.filter(t=>t.status!=="done"),td=today();
+  const card=(key,label,arr)=>{const od=arr.filter(t=>t.due&&t.due<td).length;const sel=UI.person===key;return `<button class="pcard ${sel?"on":""}" data-person="${esc(key)}" aria-pressed="${sel}"><span class="pn">${esc(label)}</span><span class="pc"><b>${arr.length}</b> open${od?`<em>${od} overdue</em>`:""}</span></button>`};
+  const un=open.filter(t=>!splitPeople(t.owner).length);
+  return `<div class="pstrip" role="group" aria-label="Filter tasks by responsible person">${card("","Everyone",open)}${allPeople().map(p=>card(p,p,open.filter(t=>matchPerson(t,p)))).join("")}${un.length||UI.person==="__none"?card("__none","Unassigned",un):""}</div>`;
+}
+function dueClass(t){if(t.status==="done"||!t.due)return"";const td=today();if(t.due<td)return"od";if(t.due<=addDays(td,3))return"soon";return""}
+
+/* ---------- meetings ---------- */
+function prepDays(){const v=S.round.prepDays,n=Number(v);return v==null||v===""||isNaN(n)?7:n}
+function prepDue(date,days){const d=addDays(date,-(Number(days)||0)),td=today();return d<td?td:d}
+function prepTitle(m){const i=S.investors[m.investorId];return `Prepare materials for ${i?i.name:"investor"} ${String(m.kind||"Meeting").toLowerCase()} on ${fmtDate(m.date)}`}
+function plannedMeetings(invId){return list("meetings").filter(m=>m.status==="planned"&&(!invId||m.investorId===invId)).sort((a,b)=>((a.date||"")+(a.time||"")).localeCompare((b.date||"")+(b.time||"")))}
+function nextMeeting(invId){const td=today();return plannedMeetings(invId).find(m=>m.date>=td)}
+function prepStatus(m){const t=S.tasks[m.prepTaskId];if(!t)return `<span class="prep">No prep task</span>`;if(t.status==="done")return `<span class="prep ok">Prep done</span>`;const dc=dueClass(t);return `<button class="linkish prep ${dc}" data-act="edit-task" data-id="${esc(t.id)}">${dc==="od"?"Prep overdue since":"Prep due"} ${fmtDate(t.due)}</button>`}
+function meetingRow(m,showInv=true){
+  const inv=S.investors[m.investorId],td=today(),past=m.date<td,isToday=m.date===td;
+  return `<li class="task"><div class="tmain"><button class="linkish" data-act="edit-meeting" data-id="${esc(m.id)}">${esc(m.title||m.kind||"Meeting")}</button>
+    <div class="meta">${showInv&&inv?`<button class="chip" data-open-inv="${esc(inv.id)}">${esc(inv.name)}</button>`:""}<span class="kind">${esc(m.kind||"Meeting")}</span>${m.calEventId?`<a class="chip" href="${esc(m.calLink||"#")}" target="_blank" rel="noopener" data-stop title="Open in Google Calendar">In calendar</a>`:""}${past?`<span class="prep od">Notes not logged yet</span>`:prepStatus(m)}${past||isToday?`<button class="btn sm w" data-act="held-meeting" data-id="${esc(m.id)}">Log notes</button>`:""}</div></div>
+    <span class="due ${past?"od":isToday?"soon":""}">${isToday?"Today":fmtDate(m.date)}${m.time?" "+esc(m.time):""}</span></li>`;
+}
+
+/* ---------- header ---------- */
+function renderHeader(){
+  const r=S.round;{const nm=(r.name||"Investor round").trim();const ix=nm.lastIndexOf(" ");$("#roundName").innerHTML=ix>0?esc(nm.slice(0,ix))+' <span class="mint">'+esc(nm.slice(ix+1))+"</span>":'<span class="mint">'+esc(nm)+"</span>"}document.title=(r.name||"Investor round")+" · Money Penny";
+  const inv=list("investors");
+  const committed=inv.filter(i=>i.stage==="committed"||i.stage==="closed").reduce((s,i)=>s+(Number(i.ticket)||0),0);
+  const late=inv.filter(i=>i.stage==="dd"||i.stage==="termsheet").reduce((s,i)=>s+(Number(i.ticket)||0),0);
+  const target=Number(r.target)||0;
+  let sub=[];
+  if(r.closeDate){const d=daysBetween(today(),r.closeDate);sub.push(`Target close ${fmtDate(r.closeDate)}`+(d>=0?` (${d} day${d===1?"":"s"} left)`:` (${-d} days ago)`))}
+  sub.push(`${inv.filter(i=>i.stage!=="passed").length} investors in the pipeline`);
+  $("#roundSub").textContent=sub.join(", ");
+  const scale=Math.max(target,committed+late,1);
+  const pct=v=>Math.min(100,v/scale*100);
+  $("#meter").innerHTML=`
+    <div class="meter-card"><div class="k">Committed</div><div class="meter-big">${fmtMoney(committed,true)}</div><div class="meter-of">${target?`of ${fmtMoney(target,true)} target (${Math.round(committed/target*100)}%)`:"No target set yet"}</div></div>
+    <div class="meter-panel"><div class="meter" role="img" aria-label="Committed ${fmtMoney(committed)}, in due diligence or term sheet ${fmtMoney(late)}${target?", target "+fmtMoney(target):""}">
+      <div class="seg l" style="left:${pct(committed)}%;width:${pct(late)}%"></div>
+      <div class="seg c" style="width:${pct(committed)}%;${committed+late>=scale-1?"border-radius:7px":""}"></div>
+      ${target?`<div class="tgt" style="left:calc(${pct(target)}% - 1px)"></div>`:""}
+    </div>
+    <div class="legend"><span><i class="k-c"></i>Committed or money in ${fmtMoney(committed)}</span><span><i class="k-l"></i>Due diligence or term sheet ${fmtMoney(late)}</span>${target?`<span><i class="k-t"></i>Target ${fmtMoney(target)}</span>`:`<span class="w"><button class="linkish" data-act="edit-round" style="color:var(--accent)">Set a target amount</button></span>`}</div>
+    </div>${RO?`<div class="notice" style="grid-column:1/-1">You can view this tracker but not change it. Ask the owner for edit access.</div>`:""}`;
+  const openT=list("tasks").filter(t=>t.status!=="done").length;
+  const tabs=[["overview","Overview"],["pipeline","Pipeline"],["investors","Investors & contacts",inv.length],["tasks","Tasks",openT],["timeline","Timeline"],["stakeholders","Stakeholders",list("stakeholders").length]];
+  $("#tabs").innerHTML=tabs.map(([k,l,n])=>`<button class="tab" role="tab" aria-selected="${UI.tab===k}" data-tab="${k}">${l}${n?`<span class="n">${n}</span>`:""}</button>`).join("");
+  $("#foot").textContent=mode==="shared"?"Changes are saved and shared live with everyone who has access to this page.":"Changes are saved in this browser only.";
+}
+
+/* ---------- task row ---------- */
+function taskRow(t,showInv=true){
+  const inv=S.investors[t.investorId];const dc=dueClass(t);
+  return `<li class="task ${t.status==="done"?"done":""}">
+    <span class="chk"><input type="checkbox" aria-label="Mark done: ${esc(t.title)}" data-task="${esc(t.id)}" ${t.status==="done"?"checked":""} ${RO?"disabled":""}></span>
+    <div class="tmain"><button class="linkish ttl" data-act="edit-task" data-id="${esc(t.id)}">${esc(t.title)}</button>
+      <div class="meta">${showInv&&inv?`<button class="chip" data-open-inv="${esc(inv.id)}">${esc(inv.name)}</button>`:""}${splitPeople(t.owner).map(p=>`<button class="pchip" data-person="${esc(p)}" title="Show tasks for ${esc(p)}">${esc(p)}</button>`).join("")}${t.status==="done"&&t.doneAt?`<span>Done ${fmtDate(t.doneAt)}</span>`:""}</div></div>
+    <span class="due ${dc}">${t.due?(dc==="od"?"Overdue, ":"")+fmtDate(t.due):""}</span></li>`;
+}
+function discBlock(d,showInv){
+  const inv=S.investors[d.investorId];
+  return `<div class="disc"><div class="disc-head"><span class="disc-date">${fmtDate(d.date)}</span><span class="kind">${esc(d.kind||"Note")}</span>
+    <button class="linkish" data-act="edit-disc" data-id="${esc(d.id)}" style="font-weight:700">${esc(d.title||"Untitled")}</button>
+    ${showInv&&inv?`<button class="chip" data-open-inv="${esc(inv.id)}">${esc(inv.name)}</button>`:""}</div>
+    ${d.attendees?`<div class="meta">With ${esc(d.attendees)}</div>`:""}
+    ${d.notes?`<p>${linkify(d.notes)}</p>`:""}
+    ${d.nextSteps?`<div class="next"><b>Next steps:</b> ${linkify(d.nextSteps)}</div>`:""}</div>`;
+}
+
+/* ---------- views ---------- */
+function vOverview(){
+  const inv=list("investors"),tasks=list("tasks");const td=today();
+  const open=tasks.filter(t=>t.status!=="done").sort(byDue);
+  const overdue=open.filter(t=>t.due&&t.due<td);
+  const since=addDays(td,-30);
+  const recentD=list("discussions").filter(d=>(d.date||"")>=since);
+  const active=inv.filter(i=>!["target","passed"].includes(i.stage));
+  const ms=list("milestones").filter(m=>!m.done).sort((a,b)=>(a.date||"9").localeCompare(b.date||"9")).slice(0,4);
+  const discs=list("discussions").sort((a,b)=>(b.date||"").localeCompare(a.date||"")||(b.createdAt||"").localeCompare(a.createdAt||"")).slice(0,5);
+  const stale=active.filter(i=>!["committed","closed"].includes(i.stage)&&!nextTask(i.id));
+  const mtgs=plannedMeetings();
+  if(!inv.length&&!tasks.length)return `<div class="panel" style="max-width:620px">
+    <h1 style="font-size:24px;margin:0;text-transform:uppercase;color:var(--ink);line-height:1.2">Start tracking <span class="mint">your round</span></h1>
+    <p style="color:var(--soft);font-style:italic;margin:8px 0 14px">Add the investors you're talking to, their contact people, and every meeting or call. Tasks and timeline milestones keep the round moving.</p>
+    <div class="w" style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" data-act="add-investor">Add your first investor</button><button class="btn" data-act="edit-round">Set round target and close date</button></div></div>`;
+  return `<div class="stats">
+    <div class="stat"><b>${active.length}</b><span>Active conversations</span></div>
+    <div class="stat"><b>${mtgs.filter(m=>m.date>=td&&m.date<=addDays(td,14)).length}</b><span>Meetings in next 14 days</span></div>
+    <div class="stat"><b>${recentD.length}</b><span>Discussions in last 30 days</span></div>
+    <div class="stat"><b>${open.length}</b><span>Open tasks</span></div>
+    <div class="stat ${overdue.length?"alert":""}"><b>${overdue.length}</b><span>Overdue tasks</span></div></div>
+  <div class="grid">
+    <section class="panel"><div class="panel-head"><h2>Upcoming meetings</h2><span class="sp"></span><button class="btn sm ghost w" data-act="add-meeting">Schedule meeting</button></div>
+      ${mtgs.length?`<ul class="clean">${mtgs.slice(0,6).map(m=>meetingRow(m)).join("")}</ul>${mtgs.length>6?`<div class="meta">${mtgs.length-6} more scheduled</div>`:""}`:`<div class="empty">Schedule investor meetings here. Each one gets a prep task automatically, due ${prepDays()} days before the meeting.</div>`}
+    </section>
+    <section class="panel"><div class="panel-head"><h2>Next up</h2><span class="sp"></span><button class="btn sm ghost w" data-act="add-task">Add task</button></div>
+      ${open.length?`<ul class="clean">${open.slice(0,7).map(t=>taskRow(t)).join("")}</ul>${open.length>7?`<button class="btn sm ghost" data-tab="tasks" style="margin-top:6px">See all ${open.length} open tasks</button>`:""}`:`<div class="empty">No open tasks. Add follow-ups after each meeting so nothing slips.</div>`}
+      ${stale.length?`<div class="group-label" style="color:var(--warn)">No next step planned</div><div class="meta">${stale.map(i=>`<button class="chip" data-open-inv="${esc(i.id)}">${esc(i.name)}</button>`).join("")}</div>`:""}
+    </section>
+    <section class="panel"><div class="panel-head"><h2>Recent discussions</h2><span class="sp"></span><button class="btn sm ghost w" data-act="add-disc">Log discussion</button></div>
+      ${discs.length?discs.map(d=>discBlock(d,true)).join(""):`<div class="empty">Log meetings, calls and emails here to keep the key points and agreed next steps in one place.</div>`}
+    </section>
+    <section class="panel"><div class="panel-head"><h2>Upcoming milestones</h2><span class="sp"></span><button class="btn sm ghost" data-tab="timeline">Timeline</button></div>
+      ${ms.length?`<ul class="clean">${ms.map(m=>`<li class="task"><div class="tmain"><button class="linkish" data-act="edit-ms" data-id="${esc(m.id)}">${esc(m.title)}</button></div><span class="due ${m.date&&m.date<td?"od":""}">${fmtDate(m.date)}</span></li>`).join("")}</ul>`:`<div class="empty">Plan key dates like deck ready, first close and final close.<br><button class="btn sm w" data-act="add-ms">Add milestone</button></div>`}
+    </section>
+  </div>`;
+}
+
+function vPipeline(){
+  const inv=list("investors");
+  return `<div class="toolbar"><h1>Round <span class="mint">pipeline</span></h1><span class="sp"></span>${sortCtl()}<span class="hint w" style="font-size:12.5px;font-style:italic;color:var(--soft)">Drag cards between stages, or open one to change it</span></div>
+  <div class="board">${STAGES.map(([k,l])=>{
+    const items=inv.filter(i=>(i.stage||"target")===k).sort(invSort);
+    const sum=items.reduce((s,i)=>s+(Number(i.ticket)||0),0);
+    return `<div class="col" data-col="${k}"><div class="col-head"><b>${l}</b><span>${items.length}</span>${sum?`<span class="col-sum">${fmtMoney(sum,true)}</span>`:""}</div>
+      ${items.map(i=>{const nt=nextTask(i.id);const c=i.contacts&&i.contacts[0];const mt=nextMeeting(i.id);
+        return `<div class="card" ${RO?"":'draggable="true"'} data-open-inv="${esc(i.id)}" data-drag="${esc(i.id)}" tabindex="0">
+          <div class="nm">${esc(i.name)}</div>
+          <div class="sub">${[i.type,i.ticket?fmtMoney(i.ticket,true):""].filter(Boolean).map(esc).join(", ")}</div>
+          ${c?`<div class="sub">${esc(c.name)}</div>`:""}
+          ${mt?`<div class="sub">${esc(mt.kind||"Meeting")} ${fmtDate(mt.date)}</div>`:""}
+          ${k==="passed"||k==="closed"?"":nt?`<div class="nx ${dueClass(nt)}">Next: ${esc(nt.title)}${nt.due?" ("+fmtDate(nt.due)+")":""}</div>`:`<div class="nx none">No next step planned</div>`}
+        </div>`}).join("")}
+      ${k==="target"?`<button class="btn sm ghost w" data-act="add-investor" style="width:100%">Add investor</button>`:""}
+    </div>`}).join("")}</div>`;
+}
+
+function vInvestors(){
+  const q=UI.search.toLowerCase();
+  const inv=list("investors").filter(i=>!q||JSON.stringify([i.name,i.type,i.owner,i.contacts]).toLowerCase().includes(q))
+    .sort(invSort);
+  return `<div class="toolbar"><h1>Investors & <span class="mint">contacts</span></h1><span class="sp"></span>
+    <input class="search" type="search" placeholder="Search names, people, emails" value="${esc(UI.search)}" data-search aria-label="Search investors and contacts">${sortCtl()}
+    <button class="btn primary w" data-act="add-investor">Add investor</button></div>
+  ${inv.length?`<div class="tbl-wrap"><table><thead><tr><th>Investor</th><th>Stage</th><th>Contact people</th><th class="num">Ticket</th><th>Last contact</th><th>Open tasks</th></tr></thead><tbody>
+  ${inv.map(i=>{const ot=invTasks(i.id).filter(t=>t.status!=="done");const lc=lastContact(i.id);
+    return `<tr data-open-inv="${esc(i.id)}"><td><div class="firm">${esc(i.name)}</div><div class="meta">${esc(i.type||"")}${i.owner?` <span>Lead: ${esc(i.owner)}</span>`:""}</div></td>
+    <td>${stagePill(i.stage||"target")}</td>
+    <td>${(i.contacts||[]).map(c=>`<div class="person"><b>${esc(c.name)}</b>${c.role?` <span class="meta" style="display:inline">${esc(c.role)}</span>`:""}<br>${c.email?`<a href="mailto:${esc(c.email)}" data-stop>${esc(c.email)}</a>`:""}${c.phone?`<a href="tel:${esc(c.phone.replace(/\s/g,""))}" data-stop>${esc(c.phone)}</a>`:""}</div>`).join("")||`<span class="meta">No contacts yet</span>`}</td>
+    <td class="num">${i.ticket?fmtMoney(i.ticket):"–"}</td>
+    <td>${lc?fmtDate(lc):`<span class="meta">Never</span>`}</td>
+    <td>${ot.length?`${ot.length}${ot.some(t=>dueClass(t)==="od")?` <span class="due od">overdue</span>`:""}`:`<span class="meta">None</span>`}</td></tr>`}).join("")}
+  </tbody></table></div>`:`<div class="panel empty">${q?"No investors or contacts match that search.":"No investors yet. Add the funds, angels and other investors you plan to approach."}</div>`}`;
+}
+
+function vTasks(){
+  const f=UI.taskFilter,td=today();
+  const all=list("tasks");
+  let ts=all.filter(t=>matchPerson(t,UI.person));
+  if(f==="open")ts=ts.filter(t=>t.status!=="done");else if(f==="done")ts=ts.filter(t=>t.status==="done");
+  let body="";
+  if(!ts.length)body=`<div class="empty">${f==="done"?"No completed tasks yet.":"No open tasks. Nice work, or time to plan the next follow-ups."}</div>`;
+  else if(f==="done")body=`<ul class="clean">${ts.sort((a,b)=>(b.doneAt||"").localeCompare(a.doneAt||"")).map(t=>taskRow(t)).join("")}</ul>`;
+  else{
+    const wk=addDays(td,7);const open=ts.filter(t=>t.status!=="done").sort(byDue);
+    const groups=[["Overdue",open.filter(t=>t.due&&t.due<td),"od"],["Today and next 7 days",open.filter(t=>t.due&&t.due>=td&&t.due<=wk)],["Later",open.filter(t=>t.due&&t.due>wk)],["No due date",open.filter(t=>!t.due)]];
+    body=groups.filter(g=>g[1].length).map(([l,a,c])=>`<div class="group-label ${c||""}">${l}</div><ul class="clean">${a.map(t=>taskRow(t)).join("")}</ul>`).join("");
+    if(f==="all"){const done=ts.filter(t=>t.status==="done");if(done.length)body+=`<div class="group-label">Done</div><ul class="clean">${done.map(t=>taskRow(t)).join("")}</ul>`}
+  }
+  return `<div class="toolbar"><h1>${UI.person==="__none"?`Unassigned <span class="mint">tasks</span>`:UI.person?`Tasks for <span class="mint">${esc(UI.person)}</span>`:`Tasks & <span class="mint">actions</span>`}</h1><span class="sp"></span>
+    <div role="group" aria-label="Filter tasks" style="display:flex;gap:4px">${[["open","Pending"],["done","Done"],["all","All"]].map(([k,l])=>`<button class="btn sm ${f===k?"primary":""}" data-filter="${k}">${l}</button>`).join("")}</div>
+    <button class="btn primary w" data-act="add-task">Add task</button></div>
+  ${personStrip(all)}
+  <div class="panel">${body}</div>`;
+}
+
+function vTimeline(){
+  const td=today();
+  const ms=list("milestones").sort((a,b)=>(a.date||"9").localeCompare(b.date||"9"));
+  let msHtml="",placed=false,n=0;
+  for(const m of ms){
+    if(!placed&&m.date&&m.date>td){msHtml+=`<li class="today-mark"><span class="dot"></span><span>Today, ${fmtDate(td)}</span></li>`;placed=true}
+    n++;
+    msHtml+=`<li class="${m.done?"done":""} ${m.date&&m.date<td?"past":""}"><button class="dot" data-act="toggle-ms" data-id="${esc(m.id)}" aria-label="${m.done?"Mark not done":"Mark done"}: ${esc(m.title)}" ${RO?"disabled":""}>${m.done?"✓":n}</button>
+      <div><button class="linkish" data-act="edit-ms" data-id="${esc(m.id)}" style="font-weight:700">${esc(m.title)}</button>
+      <div class="when">${m.date?fmtDate(m.date):"No date"}${m.date&&!m.done&&m.date<td?" (missed)":""}</div>${m.notes?`<div class="meta" style="white-space:pre-wrap">${linkify(m.notes)}</div>`:""}</div></li>`;
+  }
+  if(ms.length&&!placed)msHtml+=`<li class="today-mark"><span class="dot"></span><span>Today, ${fmtDate(td)}</span></li>`;
+  const acts=list("activity").sort((a,b)=>(b.at||"").localeCompare(a.at||"")).slice(0,200);
+  let actHtml="",lastDay="";
+  for(const a of acts){const d=new Date(a.at);const day=d.toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+    if(day!==lastDay){actHtml+=`<div class="act-day">${day}</div>`;lastDay=day}
+    const inv=S.investors[a.investorId];
+    actHtml+=`<div class="act"><time>${d.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})}</time><div>${inv?`<button class="chip" data-open-inv="${esc(inv.id)}">${esc(inv.name)}</button> `:""}${esc(a.text)}</div></div>`}
+  return `<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr));align-items:start">
+    <section class="panel"><div class="panel-head"><h2>Round timeline</h2><span class="sp"></span><button class="btn sm primary w" data-act="add-ms">Add milestone</button></div>
+      ${ms.length?`<ul class="ms" style="margin-top:8px">${msHtml}</ul>`:`<div class="empty">Add the key dates of your round, for example: deck and data room ready, first investor meetings, term sheet deadline, first close, final close.</div>`}</section>
+    <section class="panel"><div class="panel-head"><h2>Actions taken</h2></div>
+      ${acts.length?actHtml:`<div class="empty">Every stage change, logged discussion and completed task shows up here automatically.</div>`}</section></div>`;
+}
+
+/* ---------- drawer ---------- */
+function renderDrawer(){
+  const dr=$("#drawer"),bd=$("#backdrop");
+  if(UI.openSh&&S.stakeholders[UI.openSh])return renderShDrawer();
+  const i=UI.openInv&&S.investors[UI.openInv];
+  if(!i){dr.classList.remove("on");bd.classList.remove("on");dr.setAttribute("aria-hidden","true");return}
+  dr.classList.add("on");bd.classList.add("on");dr.setAttribute("aria-hidden","false");
+  const tasks=invTasks(i.id),open=tasks.filter(t=>t.status!=="done").sort(byDue),done=tasks.filter(t=>t.status==="done");
+  const discs=invDiscs(i.id);
+  const hist=list("activity").filter(a=>a.investorId===i.id).sort((a,b)=>(b.at||"").localeCompare(a.at||""));
+  const scroll=dr.querySelector(".dr-body")?.scrollTop||0;
+  dr.innerHTML=`<div class="dr-head"><div class="dr-title"><h2>${esc(i.name)}</h2>
+      <button class="btn sm w" data-act="edit-investor">Edit</button><button class="btn sm ghost" data-act="close-drawer" aria-label="Close">✕</button></div>
+    <div style="display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap">
+      ${RO?stagePill(i.stage):`<select class="stage-sel" data-stage-for="${esc(i.id)}" aria-label="Stage">${STAGES.map(([k,l])=>`<option value="${k}" ${i.stage===k?"selected":""}>${l}</option>`).join("")}</select>`}
+      <span class="meta" style="margin:0">${esc(i.type||"")}</span></div>
+    <dl class="facts"><div><dt>Expected ticket</dt><dd>${i.ticket?fmtMoney(i.ticket):"–"}</dd></div>
+      <div><dt>Our lead</dt><dd>${esc(i.owner||"–")}</dd></div>
+      <div><dt>Last contact</dt><dd>${lastContact(i.id)?fmtDate(lastContact(i.id)):"Never"}</dd></div>
+      ${i.website?`<div><dt>Website</dt><dd><a href="${esc(/^https?:/i.test(i.website)?i.website:"https://"+i.website)}" target="_blank" rel="noopener">${esc(i.website.replace(/^https?:\/\//,""))}</a></dd></div>`:""}</dl>
+  </div>
+  <div class="dr-body">
+    ${i.summary?`<section class="section"><div class="panel-head"><h2>Key notes</h2></div><div class="summary">${linkify(i.summary)}</div></section>`:""}
+    <section class="section"><div class="panel-head"><h2>Contact people</h2><span class="sp"></span><button class="btn sm w" data-act="add-contact">Add contact</button></div>
+      ${(i.contacts||[]).length?(i.contacts).map((c,ix)=>`<div class="contact"><div class="who"><b>${esc(c.name)}</b>${c.role?`<span class="meta" style="margin:0">${esc(c.role)}</span>`:""}
+        <div class="lines">${c.email?`<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>`:""}${c.phone?`<a href="tel:${esc(c.phone.replace(/\s/g,""))}">${esc(c.phone)}</a>`:""}${c.linkedin?`<a href="${esc(/^https?:/i.test(c.linkedin)?c.linkedin:"https://"+c.linkedin)}" target="_blank" rel="noopener">LinkedIn profile</a>`:""}</div>
+        ${c.notes?`<div class="meta" style="white-space:pre-wrap">${linkify(c.notes)}</div>`:""}</div>
+        <button class="btn sm ghost w" data-act="edit-contact" data-i="${ix}">Edit</button></div>`).join(""):`<div class="empty">No contact people yet.</div>`}</section>
+    <section class="section"><div class="panel-head"><h2>Upcoming meetings</h2><span class="sp"></span><button class="btn sm w" data-act="add-meeting" data-inv="${esc(i.id)}">Schedule meeting</button></div>
+      ${plannedMeetings(i.id).length?`<ul class="clean">${plannedMeetings(i.id).map(m=>meetingRow(m,false)).join("")}</ul>`:`<div class="empty">No meetings scheduled.</div>`}</section>
+    <section class="section"><div class="panel-head"><h2>Pending tasks</h2><span class="sp"></span><button class="btn sm w" data-act="add-task" data-inv="${esc(i.id)}">Add task</button></div>
+      ${open.length?`<ul class="clean">${open.map(t=>taskRow(t,false)).join("")}</ul>`:`<div class="empty" style="color:${["committed","closed","passed"].includes(i.stage)?"var(--muted)":"var(--warn)"}">No next step planned.</div>`}
+      ${done.length?`<details class="more"><summary>${done.length} completed</summary><ul class="clean">${done.map(t=>taskRow(t,false)).join("")}</ul></details>`:""}</section>
+    <section class="section"><div class="panel-head"><h2>Discussions</h2><span class="sp"></span><button class="btn sm w" data-act="add-disc" data-inv="${esc(i.id)}">Log discussion</button></div>
+      ${discs.length?discs.map(d=>discBlock(d,false)).join(""):`<div class="empty">No discussions logged yet.</div>`}</section>
+    <section class="section"><div class="panel-head"><h2>History</h2></div>
+      ${hist.length?hist.slice(0,40).map(a=>`<div class="act"><time style="width:auto;min-width:56px">${fmtDate(a.at)}</time><div>${esc(a.text)}</div></div>`).join(""):`<div class="empty">Nothing yet.</div>`}</section>
+  </div>`;
+  const b=dr.querySelector(".dr-body");if(b)b.scrollTop=scroll;
+}
+function openInv(id){UI.openSh=null;UI.openInv=id;renderDrawer();setTimeout(()=>$("#drawer .dr-title button[data-act='close-drawer']")?.focus(),50)}
+function closeDrawer(){UI.openInv=null;UI.openSh=null;renderDrawer()}
+
+/* ---------- render ---------- */
+function render(){
+  if(!UI.ready)return;
+  renderHeader();
+  const v=$("#view");const active=document.activeElement;const searching=active&&active.hasAttribute&&active.hasAttribute("data-search");const caret=searching?active.selectionStart:0;
+  v.innerHTML={overview:vOverview,pipeline:vPipeline,investors:vInvestors,tasks:vTasks,timeline:vTimeline,stakeholders:vStakeholders}[UI.tab]();
+  if(searching){const s=v.querySelector("[data-search]");if(s){s.focus();s.setSelectionRange(caret,caret)}}
+  if(UI.openInv&&!S.investors[UI.openInv])UI.openInv=null;
+  if(UI.openSh&&!S.stakeholders[UI.openSh])UI.openSh=null;
+  renderDrawer();
+}
+
+/* ---------- form dialog ---------- */
+function fieldHtml(f,val){
+  const v=val??f.def??"";
+  const lab=`${esc(f.label)}${f.hint?` <span class="hint">${esc(f.hint)}</span>`:""}`;
+  if(f.type==="row")return `<div class="row2">${f.fields.map(x=>fieldHtml(x,f._vals?.[x.k])).join("")}</div>`;
+  if(f.type==="textarea")return `<label>${lab}<textarea name="${f.k}" rows="${f.rows||4}" placeholder="${esc(f.ph||"")}">${esc(v)}</textarea></label>`;
+  if(f.type==="time24"){const [hh,mm]=String(v||"").split(":");const mins=["00","05","10","15","20","25","30","35","40","45","50","55"];if(mm&&!mins.includes(mm)){mins.push(mm);mins.sort()}
+    return `<label>${lab}<span class="t24"><select data-t24h="${f.k}" aria-label="Hour (00–23)"><option value="">--</option>${Array.from({length:24},(_,i)=>String(i).padStart(2,"0")).map(h=>`<option value="${h}" ${h===hh?"selected":""}>${h}</option>`).join("")}</select><b>:</b><select data-t24m="${f.k}" aria-label="Minutes">${mins.map(x=>`<option value="${x}" ${x===(mm||"00")?"selected":""}>${x}</option>`).join("")}</select><input type="hidden" name="${f.k}" value="${esc(v)}"></span></label>`}
+  if(f.type==="select")return `<label>${lab}<select name="${f.k}">${f.options.map(o=>{const [ov,ol]=Array.isArray(o)?o:[o,o];return `<option value="${esc(ov)}" ${String(ov)===String(v)?"selected":""}>${esc(ol)}</option>`}).join("")}</select></label>`;
+  return `<label>${lab}<input name="${f.k}" type="${f.type||"text"}" value="${esc(v)}" placeholder="${esc(f.ph||"")}" ${f.opts?`list="dl-${f.k}" autocomplete="off"`:""} ${f.type==="number"?'inputmode="decimal" min="0" step="any"':""}>${f.opts?`<datalist id="dl-${f.k}">${f.opts.map(o=>`<option value="${esc(o)}">`).join("")}</datalist>`:""}<span class="err" hidden></span></label>`;
+}
+function flat(fields){return fields.flatMap(f=>f.type==="row"?f.fields:[f])}
+function openForm({title,fields,values={},onSave,onDelete,saveLabel="Save"}){
+  const dlg=$("#dlg");
+  fields.forEach(f=>{if(f.type==="row")f._vals=values});
+  dlg.innerHTML=`<form class="form" novalidate><h2>${esc(title)}</h2>${fields.map(f=>fieldHtml(f,values[f.k])).join("")}
+    <div class="form-actions">${onDelete?`<button type="button" class="btn danger" data-del>Delete</button>`:""}<span class="sp"></span>
+    <button type="button" class="btn ghost" data-cancel>Cancel</button><button class="btn primary" type="submit">${esc(saveLabel)}</button></div></form>`;
+  const form=dlg.querySelector("form");
+  form.addEventListener("change",ev=>{const t=ev.target,k=t.dataset&&(t.dataset.t24h||t.dataset.t24m);if(!k)return;const h=form.querySelector(`[data-t24h="${k}"]`).value,m=form.querySelector(`[data-t24m="${k}"]`).value;form.elements[k].value=h?`${h}:${m}`:""});
+  form.querySelector("[data-cancel]").onclick=()=>dlg.close();
+  const delBtn=form.querySelector("[data-del]");
+  if(delBtn)delBtn.onclick=()=>{if(delBtn.classList.contains("armed")){dlg.close();onDelete()}else{delBtn.classList.add("armed");delBtn.textContent="Click again to delete"}};
+  form.onsubmit=e=>{e.preventDefault();const out={};let bad=null;
+    for(const f of flat(fields)){const el=form.elements[f.k];let x=el.value.trim();if(f.type==="number")x=x===""?null:Number(x.replace(/[\s,]/g,""));out[f.k]=x;
+      const err=el.parentElement.querySelector(".err");
+      if(f.required&&!x){el.setAttribute("aria-invalid","true");if(err){err.hidden=false;err.textContent=f.label+" is required."}bad=bad||el}
+      else if(f.type==="number"&&x!=null&&isNaN(x)){el.setAttribute("aria-invalid","true");if(err){err.hidden=false;err.textContent="Enter a number, like 250000."}bad=bad||el}
+      else{el.removeAttribute("aria-invalid");if(err)err.hidden=true}}
+    if(bad){bad.focus();return}
+    dlg.close();onSave(out)};
+  dlg.showModal();
+  setTimeout(()=>form.querySelector("input,textarea,select")?.focus(),30);
+}
+const invOptions=(allowNone)=>[...(allowNone?[["","Not linked to an investor"]]:[]),...list("investors").sort((a,b)=>a.name.localeCompare(b.name)).map(i=>[i.id,i.name])];
+
+/* ---------- actions ---------- */
+function investorForm(i){
+  openForm({title:i?"Edit investor":"Add investor",values:i||{stage:"target",type:"VC"},saveLabel:i?"Save changes":"Add investor",
+    fields:[{k:"name",label:"Investor or firm name",required:true,ph:"e.g. Nordic Ventures"},
+      {type:"row",fields:[{k:"type",label:"Type",type:"select",options:TYPES},{k:"stage",label:"Stage",type:"select",options:STAGES}]},
+      {type:"row",fields:[{k:"ticket",label:"Expected ticket",type:"number",ph:"e.g. 500000",hint:`(${S.round.currency||"EUR"})`},{k:"owner",label:"Our lead",ph:"Who owns this relationship",opts:allPeople()}]},
+      {k:"website",label:"Website",ph:"nordicventures.com"},
+      {k:"summary",label:"Key notes",type:"textarea",rows:5,ph:"Investment focus, what they care about, concerns raised, anything the team must remember"}],
+    onSave:v=>{if(i){const changed=i.stage!==v.stage;put("investors",i.id,{...i,...v,updatedAt:nowIso()});if(changed)logAct(`Moved to ${stageLabel(v.stage)}`,i.id,"stage");}
+      else{const id=uid();put("investors",id,{id,...v,contacts:[],createdAt:nowIso(),updatedAt:nowIso()});logAct(`Added to pipeline as ${stageLabel(v.stage)}`,id,"create");openInv(id)}},
+    onDelete:i?()=>{for(const t of invTasks(i.id))del("tasks",t.id);for(const m of list("meetings").filter(m=>m.investorId===i.id))del("meetings",m.id);for(const d of invDiscs(i.id))del("discussions",d.id);del("investors",i.id);closeDrawer();toast(`Deleted ${i.name}`)}:null});
+}
+function contactForm(i,ix,col="investors"){
+  const c=ix!=null?i.contacts[ix]:null;
+  openForm({title:c?"Edit contact":"Add contact at "+i.name,values:c||{},saveLabel:c?"Save changes":"Add contact",
+    fields:[{type:"row",fields:[{k:"name",label:"Name",required:true},{k:"role",label:"Role",ph:"Partner, Associate…"}]},
+      {type:"row",fields:[{k:"email",label:"Email",type:"email"},{k:"phone",label:"Phone",type:"tel",ph:"+358 …"}]},
+      {k:"linkedin",label:"LinkedIn",ph:"linkedin.com/in/…"},{k:"notes",label:"Notes",type:"textarea",rows:3,ph:"Assistant's contact, preferred channel, how you met"}],
+    onSave:v=>{const cs=[...(i.contacts||[])];if(c)cs[ix]=v;else cs.push(v);put(col,i.id,{...i,contacts:cs,updatedAt:nowIso()});if(!c&&col==="investors")logAct(`Contact added: ${v.name}`,i.id,"contact")},
+    onDelete:c?()=>{const cs=[...i.contacts];cs.splice(ix,1);put(col,i.id,{...i,contacts:cs,updatedAt:nowIso()})}:null});
+}
+function taskForm(t,invId){
+  if(!t&&!list("investors").length&&!invId){}
+  openForm({title:t?"Edit task":"Add task",values:t||{investorId:invId||"",due:addDays(today(),3),owner:(S.investors[invId]?.owner)||(UI.tab==="tasks"&&UI.person&&UI.person!=="__none"?UI.person:"")},saveLabel:t?"Save changes":"Add task",
+    fields:[{k:"title",label:"What needs to happen",required:true,ph:"e.g. Send updated financial model"},
+      {k:"investorId",label:"Investor",type:"select",options:invOptions(true)},
+      {type:"row",fields:[{k:"due",label:"Due date",type:"date"},{k:"owner",label:"Responsible person",ph:"Who does it, e.g. Kirsi or Tuija & Kirsi",opts:allPeople()}]},
+      {k:"notes",label:"Details",type:"textarea",rows:3},
+      ...(t?[{k:"status",label:"Status",type:"select",options:[["open","Pending"],["done","Done"]]}]:[])],
+    onSave:v=>{if(t){const nowDone=v.status==="done"&&t.status!=="done";put("tasks",t.id,{...t,...v,doneAt:v.status==="done"?(t.doneAt||nowIso()):""});if(nowDone)logAct(`Done: ${v.title}`,v.investorId,"task")}
+      else{const id=uid();put("tasks",id,{id,...v,status:"open",createdAt:nowIso(),doneAt:""});logAct(`Task added: ${v.title}`,v.investorId,"task")}},
+    onDelete:t?()=>del("tasks",t.id):null});
+}
+function discForm(d,invId,mtg){
+  if(!d&&!list("investors").length){toast("Add an investor first, then log discussions with them.");return}
+  const inv=S.investors[d?.investorId||invId];
+  openForm({title:d?"Edit discussion":mtg?"Log meeting notes":"Log discussion",values:d||(mtg?{investorId:mtg.investorId,date:mtg.date,kind:mtg.kind||"Meeting",title:mtg.title,attendees:mtg.attendees}:{investorId:invId||list("investors")[0]?.id,date:today(),kind:"Meeting"}),saveLabel:d?"Save changes":"Save discussion",
+    fields:[{k:"investorId",label:"Investor",type:"select",options:invOptions(false)},
+      {type:"row",fields:[{k:"date",label:"Date",type:"date",required:true},{k:"kind",label:"Type",type:"select",options:KINDS}]},
+      {k:"title",label:"Topic",required:true,ph:"e.g. Intro call, partner meeting, DD questions"},
+      {k:"attendees",label:"Who was there",ph:inv&&inv.contacts&&inv.contacts.length?inv.contacts.map(c=>c.name).join(", "):"Names"},
+      {k:"notes",label:"Key points",type:"textarea",rows:5,ph:"What they said, questions, concerns, signals of interest"},
+      {k:"nextSteps",label:"Agreed next steps",type:"textarea",rows:3,ph:"What was promised and by whom"},
+      ...(!d?[{k:"mkTask",label:"Create a follow-up task from next steps",type:"select",options:[["yes","Yes, due in 3 days"],["no","No"]]}]:[])],
+    onSave:v=>{const mk=v.mkTask;delete v.mkTask;
+      if(d)put("discussions",d.id,{...d,...v});
+      else{const id=uid();put("discussions",id,{id,...v,createdAt:nowIso()});logAct(`${v.kind} logged: ${v.title}`,v.investorId,"discussion");
+        if(mtg){const cur=S.meetings[mtg.id];if(cur)put("meetings",cur.id,{...cur,status:"held",discussionId:id})}
+        const i=S.investors[v.investorId];if(i)put("investors",i.id,{...i,updatedAt:nowIso()});
+        if(mk==="yes"&&v.nextSteps){const tid=uid();const title=v.nextSteps.split("\n")[0].slice(0,140);put("tasks",tid,{id:tid,title,investorId:v.investorId,due:addDays(today(),3),owner:(S.investors[v.investorId]?.owner||""),notes:v.nextSteps,status:"open",createdAt:nowIso(),doneAt:""})}}},
+    onDelete:d?()=>del("discussions",d.id):null});
+}
+function msForm(m){
+  openForm({title:m?"Edit milestone":"Add milestone",values:m||{},saveLabel:m?"Save changes":"Add milestone",
+    fields:[{k:"title",label:"Milestone",required:true,ph:"e.g. First close"},{k:"date",label:"Date",type:"date"},{k:"notes",label:"Notes",type:"textarea",rows:3}],
+    onSave:v=>{if(m)put("milestones",m.id,{...m,...v});else{const id=uid();put("milestones",id,{id,...v,done:false,createdAt:nowIso()})}},
+    onDelete:m?()=>del("milestones",m.id):null});
+}
+function createPrepTask(nm){
+  const tid=uid(),due=prepDue(nm.date,nm.prepDays),inv=S.investors[nm.investorId];
+  put("tasks",tid,{id:tid,title:prepTitle(nm),investorId:nm.investorId,meetingId:nm.id,due,owner:inv?.owner||"",notes:S.round.prepChecklist??DEFAULT_CHECKLIST,status:"open",createdAt:nowIso(),doneAt:""});
+  nm.prepTaskId=tid;return due;
+}
+function saveMeeting(m,v){
+  const inviteMode=v.invite;delete v.invite;
+  const td=today();
+  v.prepDays=v.prepDays==null?prepDays():Math.max(0,Math.round(v.prepDays));
+  if(!m){
+    const id=uid(),nm={id,...v,status:"planned",prepTaskId:"",createdAt:nowIso()};
+    let msg=`${v.kind} scheduled for ${fmtDate(v.date)}`;
+    if(v.date>=td)msg+=`. Prep task due ${fmtDate(createPrepTask(nm))}`;
+    put("meetings",id,nm);logAct(`${v.kind} scheduled for ${fmtDate(v.date)}: ${v.title}`,v.investorId,"meeting");toast(msg);if(inviteMode&&inviteMode!=="no"&&v.date>=td)calCreate(id,inviteMode==="meet");return;
+  }
+  const nm={...m,...v},t=S.tasks[m.prepTaskId],open=t&&t.status!=="done";
+  if(nm.status==="cancelled"){
+    if(open){del("tasks",t.id);nm.prepTaskId=""}
+    if(m.status!=="cancelled")logAct(`${nm.kind} cancelled: ${nm.title}`,nm.investorId,"meeting");
+  }else if(nm.status==="planned"){
+    const moved=m.date!==nm.date||Number(m.prepDays)!==nm.prepDays;
+    if(open){if(moved||m.investorId!==nm.investorId||m.kind!==nm.kind){const due=moved?prepDue(nm.date,nm.prepDays):t.due;put("tasks",t.id,{...t,title:prepTitle(nm),investorId:nm.investorId,due});if(moved)toast(`Prep task moved to ${fmtDate(due)}`)}}
+    else if(!t&&nm.date>=td&&(m.status==="cancelled"||moved)){toast(`Prep task due ${fmtDate(createPrepTask(nm))}`)}
+    if(m.date!==nm.date)logAct(`${nm.kind} moved to ${fmtDate(nm.date)}: ${nm.title}`,nm.investorId,"meeting");
+  }
+  put("meetings",m.id,nm);
+  if(m.calEventId){const moved=calTimes(m).startTime!==calTimes(nm).startTime||calTimes(m).endTime!==calTimes(nm).endTime;
+    if(!canCal(m)){if(nm.status==="cancelled"||moved)calElsewhere(m)}
+    else if(nm.status==="cancelled")calDelete(nm);else calUpdate(m,nm)}
+  else if(inviteMode&&inviteMode!=="no"&&nm.status==="planned"&&nm.date>=td)calCreate(m.id,inviteMode==="meet");
+}
+function meetingForm(m,invId){
+  if(!m&&!list("investors").length){toast("Add an investor first, then schedule meetings with them.");return}
+  const inv=S.investors[m?.investorId||invId];
+  openForm({title:m?(m.calEventId?"Edit meeting (in Google Calendar)":"Edit meeting"):"Schedule meeting",values:m?{duration:"60",...m,guests:m.guests||"",invite:"no"}:{investorId:invId||"",kind:"Meeting",prepDays:prepDays(),time:"10:00",duration:"60",invite:MCP?"yes":"no",guests:guestDefault(invId)},saveLabel:m?"Save changes":"Schedule meeting",
+    fields:[{k:"investorId",label:"Investor",type:"select",options:invOptions(false)},
+      {type:"row",fields:[{k:"date",label:"Date",type:"date",required:true},{k:"time",label:"Time",type:"time24"}]},
+      {type:"row",fields:[{k:"kind",label:"Type",type:"select",options:MKINDS},{k:"prepDays",label:"Prep task",type:"number",hint:"(days before)"}]},
+      {k:"title",label:"Topic",required:true,ph:"e.g. First pitch, partner meeting, DD session"},
+      {k:"attendees",label:"Who will be there",ph:inv&&inv.contacts&&inv.contacts.length?inv.contacts.map(c=>c.name).join(", "):"Names"},
+      {k:"notes",label:"Agenda and goals",type:"textarea",rows:3,ph:"What we want out of this meeting"},
+      {type:"row",fields:[{k:"duration",label:"Length",type:"select",options:[["30","30 min"],["45","45 min"],["60","1 hour"],["90","1 h 30 min"],["120","2 hours"]]},{k:"location",label:"Location",ph:"Address or video link"}]},
+      ...(MCP&&!(m&&m.calEventId)?[{k:"invite",label:"Calendar invitation",type:"select",options:[["yes","Create Google Calendar event and send invitations"],["meet","Same, and add a Google Meet link"],["no","No calendar event"]]}]:[]),
+      {k:"guests",label:"Invitation guests",type:"textarea",rows:2,ph:"partner@fund.com, colleague@ioxio.com",hint:"(emails separated by commas; the investor's contacts are filled in)"},
+      ...(m?[{k:"status",label:"Status",type:"select",options:[["planned","Planned"],["held","Held"],["cancelled","Cancelled"]]}]:[])],
+    onSave:v=>saveMeeting(m,v),
+    onDelete:m?()=>{const t=S.tasks[m.prepTaskId];if(t&&t.status!=="done")del("tasks",t.id);if(m.calEventId){if(canCal(m))calDelete(m);else calElsewhere(m)}del("meetings",m.id);toast("Meeting deleted")}:null});
+}
+function roundForm(){
+  openForm({title:"Round settings",values:{prepDays:7,prepChecklist:DEFAULT_CHECKLIST,...S.round},saveLabel:"Save settings",
+    fields:[{k:"name",label:"Round name",required:true,ph:"e.g. Seed round 2026"},
+      {type:"row",fields:[{k:"target",label:"Target amount",type:"number",ph:"e.g. 2000000"},{k:"currency",label:"Currency",type:"select",options:["EUR","USD","GBP","SEK","NOK","DKK","CHF"]}]},
+      {type:"row",fields:[{k:"closeDate",label:"Target close date",type:"date"},{k:"prepDays",label:"Meeting prep",type:"number",hint:"(days before)"}]},
+      {k:"prepChecklist",label:"Default prep checklist",type:"textarea",rows:5,hint:"(added to every new prep task)"}],
+    onSave:v=>putRound({...S.round,...v})});
+}
+function toggleTask(id,checked){const t=S.tasks[id];if(!t)return;put("tasks",id,{...t,status:checked?"done":"open",doneAt:checked?nowIso():""});if(checked)logAct(`Done: ${t.title}`,t.investorId,"task")}
+function setStage(id,stage){const i=S.investors[id];if(!i||i.stage===stage)return;put("investors",id,{...i,stage,updatedAt:nowIso()});logAct(`Moved to ${stageLabel(stage)}`,id,"stage")}
+
+/* ---------- stakeholders ---------- */
+const SH_CATS=["Partner","Customer","Advisor","Public sector","Ecosystem & network","Media","Supplier","Other"];
+const SH_STATUS=[["active","Active"],["warm","Warm"],["dormant","Dormant"]];
+const SH_O={active:1,warm:.55,dormant:.25};
+UI.openSh=null;UI.shCat="";UI.shView="list";UI.shFilter="open";UI.shPerson="";
+function shPeople(){const m=new Map();for(const o of [...list("shtasks").map(t=>t.owner),...list("stakeholders").map(s=>s.owner)])for(const p of splitPeople(o)){const k=p.toLowerCase();if(!m.has(k))m.set(k,p)}return [...m.values()].sort((a,b)=>a.localeCompare(b,"fi"))}
+function shSubnav(){const n=list("shtasks").filter(t=>t.status!=="done").length;return `<div role="tablist" aria-label="Stakeholder views" style="display:flex;gap:6px;margin-bottom:18px">${[["list","Stakeholders & partners",list("stakeholders").length],["followups","Follow-ups",n]].map(([k,l,c])=>`<button class="btn sm ${UI.shView===k?"primary":""}" role="tab" aria-selected="${UI.shView===k}" data-shview="${k}">${l}${c?` <span style="opacity:.7;margin-left:2px">${c}</span>`:""}</button>`).join("")}</div>`}
+function vShFollowups(){
+  const f=UI.shFilter,td=today(),all=list("shtasks");
+  let ts=all.filter(t=>matchPerson(t,UI.shPerson));
+  if(f==="open")ts=ts.filter(t=>t.status!=="done");else if(f==="done")ts=ts.filter(t=>t.status==="done");
+  let body="";
+  if(!ts.length)body=`<div class="empty">${f==="done"?"No completed follow-ups yet.":"No open follow-ups. Add follow-ups after stakeholder discussions so nothing slips."}</div>`;
+  else if(f==="done")body=`<ul class="clean">${ts.sort((a,b)=>(b.doneAt||"").localeCompare(a.doneAt||"")).map(t=>shTaskRow(t,true)).join("")}</ul>`;
+  else{const wk=addDays(td,7),open=ts.filter(t=>t.status!=="done").sort(byDue);
+    const groups=[["Overdue",open.filter(t=>t.due&&t.due<td),"od"],["Today and next 7 days",open.filter(t=>t.due&&t.due>=td&&t.due<=wk)],["Later",open.filter(t=>t.due&&t.due>wk)],["No due date",open.filter(t=>!t.due)]];
+    body=groups.filter(g=>g[1].length).map(([l,a,c])=>`<div class="group-label ${c||""}">${l}</div><ul class="clean">${a.map(t=>shTaskRow(t,true)).join("")}</ul>`).join("");
+    if(f==="all"){const done=ts.filter(t=>t.status==="done");if(done.length)body+=`<div class="group-label">Done</div><ul class="clean">${done.map(t=>shTaskRow(t,true)).join("")}</ul>`}}
+  const open=all.filter(t=>t.status!=="done");
+  const card=(key,label,arr)=>{const od=arr.filter(t=>t.due&&t.due<td).length;const sel=UI.shPerson===key;return `<button class="pcard ${sel?"on":""}" data-shperson="${esc(key)}" aria-pressed="${sel}"><span class="pn">${esc(label)}</span><span class="pc"><b>${arr.length}</b> open${od?`<em>${od} overdue</em>`:""}</span></button>`};
+  const un=open.filter(t=>!splitPeople(t.owner).length);
+  const strip=`<div class="pstrip" role="group" aria-label="Filter follow-ups by responsible person">${card("","Everyone",open)}${shPeople().map(p=>card(p,p,open.filter(t=>matchPerson(t,p)))).join("")}${un.length||UI.shPerson==="__none"?card("__none","Unassigned",un):""}</div>`;
+  return `${shSubnav()}<div class="toolbar"><h1>${UI.shPerson==="__none"?`Unassigned <span class="mint">follow-ups</span>`:UI.shPerson?`Follow-ups for <span class="mint">${esc(UI.shPerson)}</span>`:`Stakeholder <span class="mint">follow-ups</span>`}</h1><span class="sp"></span>
+    <div role="group" aria-label="Filter follow-ups" style="display:flex;gap:4px">${[["open","Pending"],["done","Done"],["all","All"]].map(([k,l])=>`<button class="btn sm ${f===k?"primary":""}" data-shfilter="${k}">${l}</button>`).join("")}</div>
+    <button class="btn primary w" data-act="sh-add-task-any">Add follow-up</button></div>${strip}<div class="panel">${body}</div>`;
+}
+const shLogs=id=>list("shlog").filter(l=>l.shId===id).sort((a,b)=>(b.date||"").localeCompare(a.date||"")||(b.createdAt||"").localeCompare(a.createdAt||""));
+const shTasks=id=>list("shtasks").filter(t=>t.shId===id);
+const shStatusLabel=k=>(SH_STATUS.find(s=>s[0]===k)||[,"Active"])[1];
+function shPill(k){k=k||"active";return `<span class="stage ${k==="dormant"?"passed":""}" style="--o:${SH_O[k]||1}">${esc(shStatusLabel(k))}</span>`}
+function shTaskRow(t,showSh){const s=S.stakeholders[t.shId];const dc=dueClass(t);
+  return `<li class="task ${t.status==="done"?"done":""}"><span class="chk"><input type="checkbox" aria-label="Mark done: ${esc(t.title)}" data-shtask="${esc(t.id)}" ${t.status==="done"?"checked":""} ${RO?"disabled":""}></span>
+  <div class="tmain"><button class="linkish ttl" data-act="sh-edit-task" data-id="${esc(t.id)}">${esc(t.title)}</button><div class="meta">${showSh&&s?`<button class="chip" data-open-sh="${esc(s.id)}">${esc(s.name)}</button>`:""}${splitPeople(t.owner).map(p=>`<button class="pchip" data-shperson="${esc(p)}" title="Show follow-ups for ${esc(p)}">${esc(p)}</button>`).join("")}${t.status==="done"&&t.doneAt?`<span>Done ${fmtDate(t.doneAt)}</span>`:""}</div></div>
+  <span class="due ${dc}">${t.due?(dc==="od"?"Overdue, ":"")+fmtDate(t.due):""}</span></li>`}
+function contactBlocks(cs,act){return (cs||[]).length?cs.map((c,ix)=>`<div class="contact"><div class="who"><b>${esc(c.name)}</b>${c.role?`<span class="meta" style="margin:0">${esc(c.role)}</span>`:""}
+  <div class="lines">${c.email?`<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>`:""}${c.phone?`<a href="tel:${esc(c.phone.replace(/\s/g,""))}">${esc(c.phone)}</a>`:""}${c.linkedin?`<a href="${esc(/^https?:/i.test(c.linkedin)?c.linkedin:"https://"+c.linkedin)}" target="_blank" rel="noopener">LinkedIn profile</a>`:""}</div>
+  ${c.notes?`<div class="meta" style="white-space:pre-wrap">${linkify(c.notes)}</div>`:""}</div><button class="btn sm ghost w" data-act="${act}" data-i="${ix}">Edit</button></div>`).join(""):`<div class="empty">No contact people yet.</div>`}
+function vStakeholders(){
+  const q=UI.search.toLowerCase(),all=list("stakeholders");
+  const cats=SH_CATS.filter(c=>all.some(s=>s.category===c));
+  const shs=all.filter(s=>(!UI.shCat||s.category===UI.shCat)&&(!q||JSON.stringify([s.name,s.category,s.owner,s.summary,s.contacts]).toLowerCase().includes(q))).sort((a,b)=>String(a.name||"").localeCompare(String(b.name||""),"fi",{sensitivity:"base"}));
+  const open=list("shtasks").filter(t=>t.status!=="done").sort(byDue);
+  const chip=(k,l,n)=>`<button class="btn sm ${UI.shCat===k?"primary":""}" data-shcat="${esc(k)}" aria-pressed="${UI.shCat===k}">${esc(l)} <span style="opacity:.7;margin-left:2px">${n}</span></button>`;
+  if(UI.shView==="followups")return vShFollowups();
+  return `${shSubnav()}<div class="toolbar"><h1>Stakeholders & <span class="mint">partners</span></h1><span class="sp"></span>
+    <input class="search" type="search" placeholder="Search names, people, notes" value="${esc(UI.search)}" data-search aria-label="Search stakeholders">
+    <button class="btn primary w" data-act="sh-add">Add stakeholder</button></div>
+  <p style="margin:-8px 0 14px;font-style:italic;color:var(--soft);font-size:13.5px">Partners, advisors and other key relationships. Kept separate from the investor round.</p>
+  ${all.length?`<div role="group" aria-label="Filter by category" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">${chip("","All",all.length)}${cats.map(c=>chip(c,c,all.filter(s=>s.category===c).length)).join("")}</div>`:""}
+  ${shs.length?`<div class="tbl-wrap"><table><thead><tr><th>Organisation</th><th>Category</th><th>Relationship</th><th>Contact people</th><th>Last contact</th><th>Open follow-ups</th></tr></thead><tbody>
+  ${shs.map(s=>{const ot=shTasks(s.id).filter(t=>t.status!=="done");const lc=shLogs(s.id)[0]?.date;
+    return `<tr data-open-sh="${esc(s.id)}"><td><div class="firm">${esc(s.name)}</div>${s.owner?`<div class="meta">Lead: ${esc(s.owner)}</div>`:""}${(()=>{const nm=shPlanned(s.id).find(m=>m.date>=today());return nm?`<div class="meta">${esc(nm.kind||"Meeting")} ${fmtDate(nm.date)}${nm.time?" "+esc(nm.time):""}</div>`:""})()}</td><td>${esc(s.category||"–")}</td><td>${shPill(s.status)}</td>
+    <td>${(s.contacts||[]).map(c=>`<div class="person"><b>${esc(c.name)}</b>${c.role?` <span class="meta" style="display:inline">${esc(c.role)}</span>`:""}<br>${c.email?`<a href="mailto:${esc(c.email)}" data-stop>${esc(c.email)}</a>`:""}${c.phone?`<a href="tel:${esc(c.phone.replace(/\s/g,""))}" data-stop>${esc(c.phone)}</a>`:""}</div>`).join("")||`<span class="meta">No contacts yet</span>`}</td>
+    <td>${lc?fmtDate(lc):`<span class="meta">Never</span>`}</td><td>${ot.length?`${ot.length}${ot.some(t=>dueClass(t)==="od")?` <span class="due od">overdue</span>`:""}`:`<span class="meta">None</span>`}</td></tr>`}).join("")}
+  </tbody></table></div>`:`<div class="panel empty">${all.length?"No stakeholders match this search or category.":`No stakeholders yet. Add partners, advisors, public-sector contacts and other important relationships here.<br><button class="btn sm primary w" data-act="sh-add">Add stakeholder</button>`}</div>`}
+  <div class="grid" style="margin-top:18px;align-items:start"><section class="panel"><div class="panel-head"><h2>Upcoming meetings</h2></div>${shPlanned().length?`<ul class="clean">${shPlanned().map(m=>shMeetingRow(m,true)).join("")}</ul>`:`<div class="empty">No meetings scheduled. Open a stakeholder to schedule one.</div>`}</section>
+  <section class="panel"><div class="panel-head"><h2>Open follow-ups</h2><span class="sp"></span><button class="btn sm ghost" data-shview="followups">All follow-ups</button></div>${open.length?`<ul class="clean">${open.map(t=>shTaskRow(t,true)).join("")}</ul>`:`<div class="empty">No open follow-ups with stakeholders.</div>`}</section></div>`;
+}
+function renderShDrawer(){
+  const dr=$("#drawer"),bd=$("#backdrop"),s=S.stakeholders[UI.openSh];
+  dr.classList.add("on");bd.classList.add("on");dr.setAttribute("aria-hidden","false");
+  const ts=shTasks(s.id),open=ts.filter(t=>t.status!=="done").sort(byDue),done=ts.filter(t=>t.status==="done"),logs=shLogs(s.id);
+  const scroll=dr.querySelector(".dr-body")?.scrollTop||0;
+  dr.innerHTML=`<div class="dr-head"><div class="dr-title"><h2>${esc(s.name)}</h2><button class="btn sm w" data-act="sh-edit">Edit</button><button class="btn sm ghost" data-act="close-drawer" aria-label="Close">✕</button></div>
+    <div style="display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap">${RO?shPill(s.status):`<select class="stage-sel" data-sh-status="${esc(s.id)}" aria-label="Relationship">${SH_STATUS.map(([k,l])=>`<option value="${k}" ${(s.status||"active")===k?"selected":""}>${l}</option>`).join("")}</select>`}<span class="meta" style="margin:0">${esc(s.category||"")}</span></div>
+    <dl class="facts"><div><dt>Our lead</dt><dd>${esc(s.owner||"–")}</dd></div><div><dt>Last contact</dt><dd>${logs[0]?.date?fmtDate(logs[0].date):"Never"}</dd></div>${s.website?`<div><dt>Website</dt><dd><a href="${esc(/^https?:/i.test(s.website)?s.website:"https://"+s.website)}" target="_blank" rel="noopener">${esc(s.website.replace(/^https?:\/\//,""))}</a></dd></div>`:""}</dl></div>
+  <div class="dr-body">
+    ${s.summary?`<section class="section"><div class="panel-head"><h2>Key notes</h2></div><div class="summary">${linkify(s.summary)}</div></section>`:""}
+    <section class="section"><div class="panel-head"><h2>Contact people</h2><span class="sp"></span><button class="btn sm w" data-act="sh-add-contact">Add contact</button></div>${contactBlocks(s.contacts,"sh-edit-contact")}</section>
+    <section class="section"><div class="panel-head"><h2>Upcoming meetings</h2><span class="sp"></span><button class="btn sm w" data-act="sh-add-meeting">Schedule meeting</button></div>${shPlanned(s.id).length?`<ul class="clean">${shPlanned(s.id).map(m=>shMeetingRow(m,false)).join("")}</ul>`:`<div class="empty">No meetings scheduled.</div>`}</section>
+    <section class="section"><div class="panel-head"><h2>Follow-ups</h2><span class="sp"></span><button class="btn sm w" data-act="sh-add-task">Add follow-up</button></div>
+      ${open.length?`<ul class="clean">${open.map(t=>shTaskRow(t,false)).join("")}</ul>`:`<div class="empty">No open follow-ups.</div>`}
+      ${done.length?`<details class="more"><summary>${done.length} completed</summary><ul class="clean">${done.map(t=>shTaskRow(t,false)).join("")}</ul></details>`:""}</section>
+    <section class="section"><div class="panel-head"><h2>Discussions</h2><span class="sp"></span><button class="btn sm w" data-act="sh-add-log">Log discussion</button></div>
+      ${logs.length?logs.map(d=>`<div class="disc"><div class="disc-head"><span class="disc-date">${fmtDate(d.date)}</span><span class="kind">${esc(d.kind||"Note")}</span><button class="linkish" data-act="sh-edit-log" data-id="${esc(d.id)}" style="font-weight:700">${esc(d.title||"Untitled")}</button></div>${d.attendees?`<div class="meta">With ${esc(d.attendees)}</div>`:""}${d.notes?`<p>${linkify(d.notes)}</p>`:""}${d.nextSteps?`<div class="next"><b>Next steps:</b> ${linkify(d.nextSteps)}</div>`:""}</div>`).join(""):`<div class="empty">No discussions logged yet.</div>`}</section>
+  </div>`;
+  const b=dr.querySelector(".dr-body");if(b)b.scrollTop=scroll;
+}
+function openSh(id){UI.openInv=null;UI.openSh=id;renderDrawer();setTimeout(()=>$("#drawer .dr-title button[data-act='close-drawer']")?.focus(),50)}
+function shForm(s){
+  openForm({title:s?"Edit stakeholder":"Add stakeholder",values:s||{category:"Partner",status:"active"},saveLabel:s?"Save changes":"Add stakeholder",
+    fields:[{k:"name",label:"Organisation or person",required:true,ph:"e.g. Traficom"},
+      {type:"row",fields:[{k:"category",label:"Category",type:"select",options:SH_CATS},{k:"status",label:"Relationship",type:"select",options:SH_STATUS}]},
+      {type:"row",fields:[{k:"owner",label:"Our lead",ph:"Who owns this relationship",opts:allPeople()},{k:"website",label:"Website"}]},
+      {k:"summary",label:"Key notes",type:"textarea",rows:5,ph:"Their role for us, what they care about, agreements, anything the team must remember"}],
+    onSave:v=>{if(s)put("stakeholders",s.id,{...s,...v,updatedAt:nowIso()});else{const id=uid();put("stakeholders",id,{id,...v,contacts:[],createdAt:nowIso(),updatedAt:nowIso()});openSh(id)}},
+    onDelete:s?()=>{for(const m of list("shmeetings").filter(m=>m.shId===s.id)){if(m.calEventId&&canCal(m))calDelete(m,"shmeetings");del("shmeetings",m.id)}for(const t of shTasks(s.id))del("shtasks",t.id);for(const l of shLogs(s.id))del("shlog",l.id);del("stakeholders",s.id);closeDrawer();toast(`Deleted ${s.name}`)}:null});
+}
+function shTaskForm(t,shId){
+  const s=S.stakeholders[t?t.shId:shId];
+  openForm({title:t?"Edit follow-up":"Add follow-up"+(s?` for ${s.name}`:""),values:t||{due:addDays(today(),7),owner:s?.owner||(UI.shPerson&&UI.shPerson!=="__none"?UI.shPerson:"")},saveLabel:t?"Save changes":"Add follow-up",
+    fields:[...(!t&&!s?[{k:"shId",label:"Stakeholder",type:"select",options:list("stakeholders").sort((a,b)=>String(a.name).localeCompare(String(b.name),"fi")).map(x=>[x.id,x.name])}]:[]),{k:"title",label:"What needs to happen",required:true},{type:"row",fields:[{k:"due",label:"Due date",type:"date"},{k:"owner",label:"Responsible person",opts:[...new Set([...allPeople(),...shPeople()])]}]},
+      {k:"notes",label:"Details",type:"textarea",rows:3},...(t?[{k:"status",label:"Status",type:"select",options:[["open","Pending"],["done","Done"]]}]:[])],
+    onSave:v=>{if(t)put("shtasks",t.id,{...t,...v,doneAt:v.status==="done"?(t.doneAt||nowIso()):""});else{const ss=s||S.stakeholders[v.shId];if(ss){const id=uid();put("shtasks",id,{id,...v,shId:ss.id,status:"open",doneAt:"",createdAt:nowIso()})}}},
+    onDelete:t?()=>del("shtasks",t.id):null});
+}
+function shLogForm(d,shId,mtg){
+  const sid=d?d.shId:(mtg?mtg.shId:shId);
+  openForm({title:d?"Edit discussion":mtg?"Log meeting notes":"Log discussion",values:d||(mtg?{date:mtg.date,kind:mtg.kind||"Meeting",title:mtg.title||"",attendees:mtg.attendees||""}:{date:today(),kind:"Meeting"}),saveLabel:d?"Save changes":"Save discussion",
+    fields:[{type:"row",fields:[{k:"date",label:"Date",type:"date",required:true},{k:"kind",label:"Type",type:"select",options:KINDS}]},
+      {k:"title",label:"Topic",required:true},{k:"attendees",label:"Who was there"},
+      {k:"notes",label:"Key points",type:"textarea",rows:5},{k:"nextSteps",label:"Agreed next steps",type:"textarea",rows:3},
+      ...(!d?[{k:"mkTask",label:"Create a follow-up from next steps",type:"select",options:[["yes","Yes, due in 7 days"],["no","No"]]}]:[])],
+    onSave:v=>{const mk=v.mkTask;delete v.mkTask;
+      if(d)put("shlog",d.id,{...d,...v});
+      else{const id=uid();put("shlog",id,{id,shId:sid,...v,createdAt:nowIso()});if(mtg){const cur=S.shmeetings[mtg.id];if(cur)put("shmeetings",cur.id,{...cur,status:"held",discussionId:id})}const s=S.stakeholders[sid];if(s)put("stakeholders",sid,{...s,updatedAt:nowIso()});
+        if(mk==="yes"&&v.nextSteps){const tid=uid();put("shtasks",tid,{id:tid,shId:sid,title:v.nextSteps.split("\n")[0].slice(0,140),owner:s?.owner||"",due:addDays(today(),7),notes:v.nextSteps,status:"open",doneAt:"",createdAt:nowIso()})}}},
+    onDelete:d?()=>del("shlog",d.id):null});
+}
+function shAction(a,el){const s=S.stakeholders[UI.openSh];
+  switch(a){case "sh-add":shForm();break;case "sh-edit":if(s)shForm(s);break;
+    case "sh-add-contact":if(s)contactForm(s,null,"stakeholders");break;case "sh-edit-contact":if(s)contactForm(s,Number(el.dataset.i),"stakeholders");break;
+    case "sh-add-task":if(s)shTaskForm(null,s.id);break;case "sh-edit-task":if(S.shtasks[el.dataset.id])shTaskForm(S.shtasks[el.dataset.id]);break;
+    case "sh-add-meeting":if(s)shMeetingForm(null,s.id);break;case "sh-edit-meeting":if(S.shmeetings[el.dataset.id])shMeetingForm(S.shmeetings[el.dataset.id]);break;
+    case "sh-held-meeting":{const m=S.shmeetings[el.dataset.id];if(m)shLogForm(null,m.shId,m);break}
+    case "sh-add-task-any":if(!list("stakeholders").length){toast("Add a stakeholder first, then add follow-ups for them.");break}shTaskForm(null,null);break;
+    case "sh-add-log":if(s)shLogForm(null,s.id);break;case "sh-edit-log":if(S.shlog[el.dataset.id])shLogForm(S.shlog[el.dataset.id]);break}}
+
+/* ---------- stakeholder meetings ---------- */
+function shPrepTitle(m){const s=S.stakeholders[m.shId];return `Prepare for ${s?s.name:"stakeholder"} ${String(m.kind||"Meeting").toLowerCase()} on ${fmtDate(m.date)}`}
+function shPlanned(shId){return list("shmeetings").filter(m=>m.status==="planned"&&(!shId||m.shId===shId)).sort((a,b)=>((a.date||"")+(a.time||"")).localeCompare((b.date||"")+(b.time||"")))}
+function shPrepStatus(m){const t=S.shtasks[m.prepTaskId];if(!t)return `<span class="prep">No prep follow-up</span>`;if(t.status==="done")return `<span class="prep ok">Prep done</span>`;const dc=dueClass(t);return `<button class="linkish prep ${dc}" data-act="sh-edit-task" data-id="${esc(t.id)}">${dc==="od"?"Prep overdue since":"Prep due"} ${fmtDate(t.due)}</button>`}
+function shMeetingRow(m,showSh=true){const s=S.stakeholders[m.shId],td=today(),past=m.date<td,isToday=m.date===td;
+  return `<li class="task"><div class="tmain"><button class="linkish" data-act="sh-edit-meeting" data-id="${esc(m.id)}">${esc(m.title||m.kind||"Meeting")}</button>
+  <div class="meta">${showSh&&s?`<button class="chip" data-open-sh="${esc(s.id)}">${esc(s.name)}</button>`:""}<span class="kind">${esc(m.kind||"Meeting")}</span>${m.calEventId?`<a class="chip" href="${esc(m.calLink||"#")}" target="_blank" rel="noopener" data-stop title="Open in Google Calendar">In calendar</a>`:""}${past?`<span class="prep od">Notes not logged yet</span>`:shPrepStatus(m)}${past||isToday?`<button class="btn sm w" data-act="sh-held-meeting" data-id="${esc(m.id)}">Log notes</button>`:""}</div></div>
+  <span class="due ${past?"od":isToday?"soon":""}">${isToday?"Today":fmtDate(m.date)}${m.time?" "+esc(m.time):""}</span></li>`}
+function shCreatePrep(nm){const tid=uid(),due=prepDue(nm.date,nm.prepDays),s=S.stakeholders[nm.shId];
+  put("shtasks",tid,{id:tid,shId:nm.shId,meetingId:nm.id,title:shPrepTitle(nm),due,owner:s?.owner||"",notes:"",status:"open",doneAt:"",createdAt:nowIso()});nm.prepTaskId=tid;return due}
+function saveShMeeting(m,v){
+  const inviteMode=v.invite;delete v.invite;const td=today();
+  v.prepDays=v.prepDays==null?prepDays():Math.max(0,Math.round(v.prepDays));
+  if(!m){const id=uid(),nm={id,...v,status:"planned",prepTaskId:"",createdAt:nowIso()};let msg=`${v.kind} scheduled for ${fmtDate(v.date)}`;
+    if(v.date>=td)msg+=`. Prep follow-up due ${fmtDate(shCreatePrep(nm))}`;
+    put("shmeetings",id,nm);const s=S.stakeholders[v.shId];if(s)put("stakeholders",s.id,{...s,updatedAt:nowIso()});toast(msg);
+    if(inviteMode&&inviteMode!=="no"&&v.date>=td)calCreate(id,inviteMode==="meet","shmeetings");return}
+  const nm={...m,...v},t=S.shtasks[m.prepTaskId],open=t&&t.status!=="done";
+  if(nm.status==="cancelled"){if(open){del("shtasks",t.id);nm.prepTaskId=""}}
+  else if(nm.status==="planned"){const moved=m.date!==nm.date||Number(m.prepDays)!==nm.prepDays;
+    if(open){if(moved||m.kind!==nm.kind){const due=moved?prepDue(nm.date,nm.prepDays):t.due;put("shtasks",t.id,{...t,title:shPrepTitle(nm),due});if(moved)toast(`Prep follow-up moved to ${fmtDate(due)}`)}}
+    else if(!t&&nm.date>=td&&(m.status==="cancelled"||moved))toast(`Prep follow-up due ${fmtDate(shCreatePrep(nm))}`)}
+  put("shmeetings",m.id,nm);
+  if(m.calEventId){const mv=calTimes(m).startTime!==calTimes(nm).startTime||calTimes(m).endTime!==calTimes(nm).endTime;
+    if(!canCal(m)){if(nm.status==="cancelled"||mv)calElsewhere(m)}else if(nm.status==="cancelled")calDelete(nm,"shmeetings");else calUpdate(m,nm,"shmeetings")}
+  else if(inviteMode&&inviteMode!=="no"&&nm.status==="planned"&&nm.date>=td)calCreate(m.id,inviteMode==="meet","shmeetings");
+}
+function shMeetingForm(m,shId){
+  const sid=m?m.shId:shId,s=S.stakeholders[sid];if(!s)return;
+  openForm({title:m?(m.calEventId?"Edit meeting (in Google Calendar)":"Edit meeting"):`Schedule meeting with ${s.name}`,
+    values:m?{duration:"60",...m,guests:m.guests||"",invite:"no"}:{kind:"Meeting",prepDays:prepDays(),time:"10:00",duration:"60",invite:MCP?"yes":"no",guests:(s.contacts||[]).map(c=>c.email).filter(Boolean).join(", ")},
+    saveLabel:m?"Save changes":"Schedule meeting",
+    fields:[{type:"row",fields:[{k:"date",label:"Date",type:"date",required:true},{k:"time",label:"Time",type:"time24"}]},
+      {type:"row",fields:[{k:"kind",label:"Type",type:"select",options:MKINDS},{k:"prepDays",label:"Prep follow-up",type:"number",hint:"(days before)"}]},
+      {k:"title",label:"Topic",required:true,ph:"e.g. Partnership kick-off, workshop, quarterly review"},
+      {k:"attendees",label:"Who will be there",ph:(s.contacts||[]).length?s.contacts.map(c=>c.name).join(", "):"Names"},
+      {k:"notes",label:"Agenda and goals",type:"textarea",rows:3,ph:"What we want out of this meeting"},
+      {type:"row",fields:[{k:"duration",label:"Length",type:"select",options:[["30","30 min"],["45","45 min"],["60","1 hour"],["90","1 h 30 min"],["120","2 hours"]]},{k:"location",label:"Location",ph:"Address or video link"}]},
+      ...(MCP&&!(m&&m.calEventId)?[{k:"invite",label:"Calendar invitation",type:"select",options:[["yes","Create Google Calendar event and send invitations"],["meet","Same, and add a Google Meet link"],["no","No calendar event"]]}]:[]),
+      {k:"guests",label:"Invitation guests",type:"textarea",rows:2,ph:"name@partner.com, colleague@ioxio.com",hint:"(emails separated by commas; the stakeholder's contacts are filled in)"},
+      ...(m?[{k:"status",label:"Status",type:"select",options:[["planned","Planned"],["held","Held"],["cancelled","Cancelled"]]}]:[])],
+    onSave:v=>saveShMeeting(m,{...v,shId:sid}),
+    onDelete:m?()=>{const t=S.shtasks[m.prepTaskId];if(t&&t.status!=="done")del("shtasks",t.id);if(m.calEventId){if(canCal(m))calDelete(m,"shmeetings");else calElsewhere(m)}del("shmeetings",m.id);toast("Meeting deleted")}:null});
+}
+
+/* ---------- google calendar ---------- */
+let MCP=null,VIEWER_ID="";const CAL="Google Calendar";
+function parseEmails(s){return [...new Set(String(s||"").split(/[\s,;]+/).map(x=>x.trim().toLowerCase()).filter(x=>/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x)))]}
+function guestDefault(invId){const i=S.investors[invId];return i?(i.contacts||[]).map(c=>c.email).filter(Boolean).join(", "):""}
+function canCal(m){return !!m.calEventId&&(!m.calBy||!VIEWER_ID||m.calBy===VIEWER_ID)}
+function calTimes(m){const t=m.time||"10:00",p=n=>String(n).padStart(2,"0");const d=new Date(`${m.date}T${t}:00`);d.setMinutes(d.getMinutes()+(Number(m.duration)||60));
+  return {startTime:`${m.date}T${t}:00`,endTime:`${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}:00`}}
+function calSummary(m){const i=m.shId?S.stakeholders[m.shId]:S.investors[m.investorId];return `${i?i.name+": ":""}${m.title||m.kind||"Meeting"}`}
+function calDesc(m){const i=m.shId?S.stakeholders[m.shId]:S.investors[m.investorId];return [m.notes?esc(m.notes).replace(/\n/g,"<br>"):"",i?`${m.shId?"Stakeholder":"Investor"}: ${esc(i.name)}`:""].filter(Boolean).join("<br><br>")}
+async function calCall(tool,input){if(!MCP)throw {code:"unavailable"};const r=await MCP.callTool(CAL,tool,input);return r&&r.payload||{}}
+function calErr(e,what){const c=e&&e.code;const m={needs_reauth:"Reconnect Google Calendar in claude.ai Settings → Connectors.",server_not_connected:"Add Google Calendar in claude.ai Settings → Connectors.",selection_required:"Choose which Google Calendar connection to use when Claude asks.",not_in_manifest:"Calendar access isn't allowed for this page in your view.",approval_required:"The calendar action needs your approval.",blocked_by_policy:"Your organisation blocks this calendar action.",tool_error:"Google Calendar refused the request.",server_unavailable:"Google Calendar isn't responding right now."}[c]||"Couldn't reach Google Calendar.";toast(`${what} failed. ${m}`)}
+async function calCreate(mid,meet,col="meetings"){
+  const m=S[col][mid];if(!m)return;const guests=parseEmails(m.guests);
+  const input={summary:calSummary(m),...calTimes(m),description:calDesc(m),attendees:guests.map(email=>({email})),notificationLevel:"ALL"};
+  if(m.location)input.location=m.location;if(meet)input.addGoogleMeetUrl=true;
+  toast("Creating the calendar invitation…");
+  try{const p=await calCall("create_event",input);const cur=S[col][mid];
+    if(cur)put(col,mid,{...cur,calEventId:p.id||"",calLink:p.htmlLink||"",calOrganizer:p.organizer&&p.organizer.email||"",calBy:VIEWER_ID||"",calSyncedAt:nowIso()});
+    if(col==="meetings")logAct(`Calendar invitation created${guests.length?` for ${guests.length} guest${guests.length>1?"s":""}`:""}: ${m.title}`,m.investorId,"meeting");
+    toast(guests.length?`Invitation sent to ${guests.length} guest${guests.length>1?"s":""}`:"Calendar event created")}
+  catch(e){calErr(e,"Creating the calendar invitation")}
+}
+async function calUpdate(prev,next,col="meetings"){
+  const ch={},pt=calTimes(prev),nt=calTimes(next);
+  if(pt.startTime!==nt.startTime||pt.endTime!==nt.endTime)Object.assign(ch,nt);
+  if(calSummary(prev)!==calSummary(next))ch.summary=calSummary(next);
+  if(calDesc(prev)!==calDesc(next))ch.description=calDesc(next);
+  if((prev.location||"")!==(next.location||""))ch.location=next.location||"";
+  const pg=parseEmails(prev.guests),ng=parseEmails(next.guests),add=ng.filter(x=>!pg.includes(x)),rem=pg.filter(x=>!ng.includes(x));
+  if(add.length)ch.addedAttendees=add.map(email=>({email}));if(rem.length)ch.removedAttendeeEmails=rem;
+  if(!Object.keys(ch).length)return;
+  try{await calCall("update_event",{eventId:next.calEventId,...ch,notificationLevel:"ALL"});const cur=S[col][next.id];if(cur)put(col,cur.id,{...cur,calSyncedAt:nowIso()});toast("Calendar invitation updated")}
+  catch(e){calErr(e,"Updating the calendar invitation")}
+}
+async function calDelete(m,col="meetings"){
+  try{await calCall("delete_event",{eventId:m.calEventId,notificationLevel:"ALL"});const cur=S[col][m.id];if(cur)put(col,cur.id,{...cur,calEventId:"",calLink:"",calCancelledAt:nowIso()});toast("Calendar invitation cancelled")}
+  catch(e){calErr(e,"Cancelling the calendar invitation")}
+}
+function calElsewhere(m){toast(`The calendar invitation is in ${m.calOrganizer||"a colleague"}'s calendar. Ask them to update it there.`)}
+
+/* ---------- export report ---------- */
+let DL=null;
+function slug(s){return String(s||"").toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"investor-round"}
+function buildReport(){
+  const r=S.round,td=today(),inv=list("investors"),tasks=list("tasks"),e=esc;
+  const sumT=a=>a.reduce((s,i)=>s+(Number(i.ticket)||0),0);
+  const committed=sumT(inv.filter(i=>i.stage==="committed"||i.stage==="closed")),late=sumT(inv.filter(i=>i.stage==="dd"||i.stage==="termsheet")),target=Number(r.target)||0;
+  const so=k=>STAGES.findIndex(s=>s[0]===(k||"target"));
+  const invs=inv.slice().sort((a,b)=>so(a.stage)-so(b.stage)||String(a.name).localeCompare(b.name));
+  const open=tasks.filter(t=>t.status!=="done").sort(byDue),done=tasks.filter(t=>t.status==="done").sort((a,b)=>(b.doneAt||"").localeCompare(a.doneAt||""));
+  const overdue=open.filter(t=>t.due&&t.due<td);
+  const iname=id=>e(S.investors[id]?.name||"");
+  const mts=list("meetings").sort((a,b)=>((a.date||"")+(a.time||"")).localeCompare((b.date||"")+(b.time||"")));
+  const prepTxt=m=>{const t=S.tasks[m.prepTaskId];if(!t)return "–";if(t.status==="done")return "Done";return t.due&&t.due<td?`<span class="od">Overdue (${fmtDate(t.due)})</span>`:`Due ${fmtDate(t.due)}`};
+  const mStatus=m=>m.status==="cancelled"?"Cancelled":m.status==="held"?"Held":(m.date<td?`<span class="warn">Notes not logged</span>`:"Planned");
+  const upM=mts.filter(m=>m.status==="planned"&&m.date>=td),pastM=mts.filter(m=>!(m.status==="planned"&&m.date>=td)).reverse();
+  const mRow=(m,prep)=>[`<b>${fmtDate(m.date)}</b>${m.time?` ${e(m.time)}`:""}`,iname(m.investorId)||"–",e(m.kind||"Meeting"),`<b>${e(m.title||"")}</b>${m.notes?`<div class="muted pre">${e(m.notes)}</div>`:""}`,e(m.attendees||"–"),prep?prepTxt(m):mStatus(m)];
+  const dueTxt=t=>t.due?(t.due<td&&t.status!=="done"?`<span class="od">${fmtDate(t.due)} (overdue)</span>`:fmtDate(t.due)):"–";
+  const nm=(r.name||"Investor round").trim(),ix=nm.lastIndexOf(" ");
+  const title=ix>0?e(nm.slice(0,ix))+` <span class="mint">${e(nm.slice(ix+1))}</span>`:`<span class="mint">${e(nm)}</span>`;
+  const logo=document.querySelector(".brandbar img")?.src||"";
+  const gen=new Date().toLocaleString("en-GB",{day:"numeric",month:"long",year:"numeric",hour:"2-digit",minute:"2-digit"});
+  const days=r.closeDate?daysBetween(td,r.closeDate):null;
+  const table=(head,rows,empty)=>rows.length?`<div class="tblw"><table><thead><tr>${head.map(h=>`<th>${h}</th>`).join("")}</tr></thead><tbody>${rows.map(c=>`<tr>${c.map(x=>`<td>${x}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`:`<p class="empty">${empty}</p>`;
+  const active=inv.filter(i=>!["target","passed"].includes(i.stage||"target"));
+  const stageRows=STAGES.map(([k,l])=>{const a=inv.filter(i=>(i.stage||"target")===k);return [e(l),String(a.length),a.length&&sumT(a)?fmtMoney(sumT(a)):"–"]});
+  const pipeRows=invs.map(i=>{const nt=nextTask(i.id);return [`<b>${e(i.name)}</b>`,e(i.type||"–"),e(stageLabel(i.stage||"target")),e(i.owner||"–"),i.ticket?fmtMoney(i.ticket):"–",lastContact(i.id)?fmtDate(lastContact(i.id)):"Never",nt?`${e(nt.title)}${nt.due?` <span class="muted">(${fmtDate(nt.due)})</span>`:""}`:(["committed","closed","passed"].includes(i.stage)?"–":`<span class="warn">No next step planned</span>`)]});
+  const unassigned=open.filter(t=>!splitPeople(t.owner).length);
+  const personBlocks=[...allPeople().map(p=>[p,open.filter(t=>matchPerson(t,p))]),["Unassigned",unassigned]].filter(([,a])=>a.length).map(([p,a])=>{const od=a.filter(t=>t.due&&t.due<td).length;return `<div class="keep"><h3>${e(p)} <span class="muted">${a.length} open${od?`, <span class="od">${od} overdue</span>`:""}</span></h3>${table(["Task","Investor","Due","Details"],a.map(t=>[e(t.title),iname(t.investorId)||"–",dueTxt(t),`<span class="pre">${e(t.notes||"")}</span>`]),"")}</div>`}).join("")||`<p class="empty">No open tasks.</p>`;
+  const doneRows=done.map(t=>[e(t.title),iname(t.investorId)||"–",e(t.owner||"–"),t.doneAt?fmtDate(t.doneAt):"–"]);
+  const ms=list("milestones").sort((a,b)=>(a.date||"9").localeCompare(b.date||"9"));
+  const msRows=ms.map((m,k)=>[String(k+1),`<b>${e(m.title)}</b>${m.notes?`<div class="muted pre">${e(m.notes)}</div>`:""}`,m.date?fmtDate(m.date):"–",m.done?"Done":(m.date&&m.date<td?`<span class="od">Missed</span>`:"Upcoming")]);
+  const profiles=invs.map(i=>{const ts=invTasks(i.id),ot=ts.filter(t=>t.status!=="done").sort(byDue),dt=ts.filter(t=>t.status==="done");const ds=invDiscs(i.id);const hist=list("activity").filter(a=>a.investorId===i.id).sort((a,b)=>(b.at||"").localeCompare(a.at||""));
+    return `<article class="inv"><div class="inv-head"><h3>${e(i.name)}</h3><span class="pill">${e(stageLabel(i.stage||"target"))}</span></div>
+    <dl class="facts"><div><dt>Type</dt><dd>${e(i.type||"–")}</dd></div><div><dt>Our lead</dt><dd>${e(i.owner||"–")}</dd></div><div><dt>Expected ticket</dt><dd>${i.ticket?fmtMoney(i.ticket):"–"}</dd></div><div><dt>Last contact</dt><dd>${lastContact(i.id)?fmtDate(lastContact(i.id)):"Never"}</dd></div>${i.website?`<div><dt>Website</dt><dd>${e(i.website)}</dd></div>`:""}</dl>
+    ${i.summary?`<h4>Key notes</h4><p class="pre">${e(i.summary)}</p>`:""}
+    <h4>Contact people</h4>${table(["Name","Role","Email","Phone","LinkedIn"],(i.contacts||[]).map(c=>[`<b>${e(c.name)}</b>${c.notes?`<div class="muted pre">${e(c.notes)}</div>`:""}`,e(c.role||"–"),c.email?`<a href="mailto:${e(c.email)}">${e(c.email)}</a>`:"–",e(c.phone||"–"),e(c.linkedin||"–")]),"No contact people recorded.")}
+    ${mts.some(m=>m.investorId===i.id)?`<h4>Meetings</h4>${table(["Date","Type","Topic","Status"],mts.filter(m=>m.investorId===i.id).map(m=>[`${fmtDate(m.date)}${m.time?" "+e(m.time):""}`,e(m.kind||"Meeting"),e(m.title||""),mStatus(m)]),"")}`:""}
+    <h4>Pending tasks</h4>${table(["Task","Responsible","Due"],ot.map(t=>[e(t.title),e(t.owner||"–"),dueTxt(t)]),"No pending tasks.")}
+    ${dt.length?`<h4>Completed tasks</h4>${table(["Task","Responsible","Completed"],dt.map(t=>[e(t.title),e(t.owner||"–"),t.doneAt?fmtDate(t.doneAt):"–"]),"")}`:""}
+    <h4>Discussions</h4>${ds.length?ds.map(d=>`<div class="disc"><div><b>${fmtDate(d.date)}</b> <span class="kind">${e(d.kind||"Note")}</span> <b>${e(d.title||"")}</b></div>${d.attendees?`<div class="muted">With ${e(d.attendees)}</div>`:""}${d.notes?`<p class="pre">${e(d.notes)}</p>`:""}${d.nextSteps?`<p class="next"><b>Next steps:</b> ${e(d.nextSteps)}</p>`:""}</div>`).join(""):`<p class="empty">No discussions logged.</p>`}
+    ${hist.length?`<h4>History</h4>${table(["Date","Action"],hist.map(a=>[fmtDate(a.at),e(a.text)]),"")}`:""}
+    </article>`}).join("")||`<p class="empty">No investors yet.</p>`;
+  const actRows=list("activity").sort((a,b)=>(b.at||"").localeCompare(a.at||"")).map(a=>[new Date(a.at).toLocaleString("en-GB",{day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"}),iname(a.investorId)||"–",e(a.text)]);
+  const css=`:root{--navy:#0F1C24;--ink:#132430;--muted:#4A5C68;--line:#C9D3D8;--mint:#9BF9C2;--teal:#137F8C;--soft:#EEF2F0;--red:#B23A31;--amber:#8A5A00}
+*{box-sizing:border-box}body{margin:0;font-family:Poppins,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink);background:#fff;font-size:12.5px;line-height:1.5;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.band{background:var(--navy);color:#fff;padding:28px 40px 30px}.brand{display:flex;align-items:center;gap:12px}.brand img{height:20px}.brand i{width:1px;height:18px;background:#22384A}.brand span{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--mint)}
+.band h1{font-size:30px;font-weight:800;text-transform:uppercase;margin:18px 0 4px;line-height:1.1}.mint{color:var(--mint)}.band .sub{font-style:italic;color:#C9D3D8}
+.toc{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}.toc a{color:#fff;border:1px solid #1AA6B7;border-radius:999px;padding:3px 12px;font-size:11px;text-decoration:none;font-weight:600}
+main{padding:10px 40px 30px;max-width:1120px}h2{font-size:18px;text-transform:uppercase;font-weight:800;margin:30px 0 12px;padding-bottom:6px;border-bottom:3px solid var(--mint);break-after:avoid}h2 small{display:block;font-size:10px;letter-spacing:.14em;color:var(--teal);font-weight:700}
+h3{font-size:14px;margin:16px 0 6px;break-after:avoid}h4{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--teal);margin:14px 0 4px;break-after:avoid}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}.kpi{border:1px solid var(--line);border-radius:10px;padding:12px 14px}.kpi.hi{background:var(--mint);border-color:var(--mint);color:var(--navy)}
+.kpi .k{font-size:10px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:var(--muted)}.kpi.hi .k,.kpi.hi .s{color:var(--navy)}.kpi .v{font-size:22px;font-weight:800;line-height:1.25}.kpi .s{font-size:11px;color:var(--muted)}
+.tblw{overflow-x:auto}table{width:100%;border-collapse:collapse;margin:4px 0 8px}th{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;text-align:left;color:var(--muted);border-bottom:1.5px solid var(--navy);padding:6px 8px}td{padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}tr{break-inside:avoid}
+.muted{color:var(--muted)}.od{color:var(--red);font-weight:600}.warn{color:var(--amber);font-weight:600}.empty{color:var(--muted);font-style:italic;margin:4px 0}.pre{white-space:pre-wrap}p.pre{margin:2px 0}
+.inv{border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:0 0 16px}.inv-head{display:flex;align-items:center;gap:10px;justify-content:space-between}.inv-head h3{margin:0;font-size:16px;text-transform:uppercase;font-weight:800}
+.pill{background:var(--navy);color:var(--mint);border-radius:999px;padding:2px 10px;font-size:10.5px;font-weight:700;white-space:nowrap}.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:6px 16px;margin:10px 0 0}.facts dt{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}.facts dd{margin:0;font-weight:600;overflow-wrap:anywhere}
+.disc{padding:8px 0;border-bottom:1px solid var(--line);break-inside:avoid}.kind{background:var(--mint);color:var(--navy);border-radius:999px;padding:0 7px;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.next{border-left:3px solid var(--mint);background:var(--soft);padding:6px 10px;margin:6px 0 0;font-style:italic;white-space:pre-wrap}.next b{font-style:normal}.keep{break-inside:avoid}
+a{color:var(--teal)}.print{position:fixed;top:16px;right:16px;background:var(--mint);color:var(--navy);border:0;border-radius:999px;padding:8px 16px;font:inherit;font-weight:700;cursor:pointer}footer{padding:10px 40px 30px;color:var(--muted);font-size:10.5px}
+@media print{.print,.toc{display:none}#investors{break-before:page}.inv{break-inside:avoid}.band{padding:20px 28px}main{padding:6px 28px}footer{padding:10px 28px}@page{margin:12mm}}
+@media (max-width:700px){.kpis{grid-template-columns:1fr 1fr}.band,main,footer{padding-left:18px;padding-right:18px}}`;
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${e(nm)} report ${td}</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet"><style>${css}</style></head><body>
+<button class="print" onclick="window.print()">Print or save as PDF</button>
+<header class="band"><div class="brand">${logo?`<img alt="IOXIO" src="${logo}">`:"<b>IOXIO</b>"}<i></i><span>Money Penny report</span></div>
+<h1>${title}</h1><div class="sub">Generated ${e(gen)}${r.closeDate?`. Target close ${fmtDate(r.closeDate)}${days>=0?` (${days} days left)`:` (${-days} days ago)`}`:""}.</div>
+<nav class="toc"><a href="#summary">Summary</a><a href="#pipeline">Pipeline</a><a href="#meetings">Meetings</a><a href="#tasks">Tasks by person</a><a href="#timeline">Timeline</a><a href="#investors">Investor profiles</a><a href="#log">Actions log</a></nav></header>
+<main>
+<h2 id="summary"><small>01</small>Round summary</h2>
+<div class="kpis"><div class="kpi hi"><div class="k">Committed</div><div class="v">${fmtMoney(committed)}</div><div class="s">${target?`${Math.round(committed/target*100)}% of target`:"No target set"}</div></div>
+<div class="kpi"><div class="k">Due diligence or term sheet</div><div class="v">${fmtMoney(late)}</div><div class="s">Late-stage pipeline</div></div>
+<div class="kpi"><div class="k">Target</div><div class="v">${target?fmtMoney(target):"–"}</div><div class="s">${target?`${fmtMoney(Math.max(0,target-committed))} still to raise`:""}</div></div>
+<div class="kpi"><div class="k">Investors</div><div class="v">${inv.length}</div><div class="s">${active.length} in active conversations</div></div>
+<div class="kpi"><div class="k">Open tasks</div><div class="v">${open.length}</div><div class="s">${overdue.length?`<span class="od">${overdue.length} overdue</span>`:"None overdue"}</div></div>
+<div class="kpi"><div class="k">Upcoming meetings</div><div class="v">${upM.length}</div><div class="s">${list("discussions").length} discussions logged</div></div></div>
+${table(["Stage","Investors","Total expected ticket"],stageRows,"")}
+<h2 id="pipeline"><small>02</small>Pipeline overview</h2>${table(["Investor","Type","Stage","Our lead","Ticket","Last contact","Next step"],pipeRows,"No investors yet.")}
+<h2 id="meetings"><small>03</small>Meetings</h2>
+<h3>Upcoming <span class="muted">${upM.length}</span></h3>${table(["When","Investor","Type","Topic and agenda","Attendees","Prep"],upM.map(m=>mRow(m,true)),"No upcoming meetings scheduled.")}
+${pastM.length?`<h3>Past and cancelled <span class="muted">${pastM.length}</span></h3>${table(["When","Investor","Type","Topic and agenda","Attendees","Status"],pastM.map(m=>mRow(m,false)),"")}`:""}
+<h2 id="tasks"><small>04</small>Tasks by responsible person</h2>${personBlocks}
+<h3>Completed tasks <span class="muted">${done.length}</span></h3>${table(["Task","Investor","Responsible","Completed"],doneRows,"No completed tasks yet.")}
+<h2 id="timeline"><small>05</small>Round timeline</h2>${table(["#","Milestone","Date","Status"],msRows,"No milestones set.")}
+<h2 id="investors"><small>06</small>Investor profiles</h2>${profiles}
+<h2 id="log"><small>07</small>Actions log</h2>${table(["When","Investor","Action"],actRows,"No actions recorded yet.")}
+</main><footer>Confidential. Exported from Money Penny on ${e(gen)}.</footer></body></html>`;
+}
+async function exportReport(){
+  const html=buildReport();const fname=`${slug(S.round.name)}-report-${today()}.html`;
+  if(DL){try{await DL.save({filename:fname,data:html});toast("Report saved. Open it in a browser to read or print to PDF.")}
+    catch(err){const c=err&&err.code;if(c==="declined")return;if(c==="rate_limited")toast("A save prompt is already open.");else toast("The report couldn't be saved in this view.")}}
+  else{try{const b=new Blob([html],{type:"text/html"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=fname;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000)}catch(err){toast("The report couldn't be saved in this view.")}}
+}
+
+/* ---------- events ---------- */
+
+document.addEventListener("click",e=>{
+  const el=e.target.closest("[data-act],[data-tab],[data-open-inv],[data-filter],[data-person],[data-sort],[data-open-sh],[data-shcat],[data-shview],[data-shfilter],[data-shperson],a[data-stop]");if(!el)return;
+  if(el.dataset.shcat!==undefined){UI.shCat=el.dataset.shcat;render();return}
+  if(el.dataset.shview){UI.shView=el.dataset.shview;render();window.scrollTo({top:0});return}
+  if(el.dataset.shfilter){UI.shFilter=el.dataset.shfilter;render();return}
+  if(el.dataset.shperson!==undefined){UI.shPerson=el.dataset.shperson;UI.shView="followups";UI.tab="stakeholders";closeDrawer();render();return}
+  if(el.dataset.sort){UI.sort=el.dataset.sort;try{localStorage.setItem("crm-invsort",UI.sort)}catch(e){}render();return}
+  if(el.dataset.person!==undefined){UI.person=el.dataset.person;if(UI.tab!=="tasks"){UI.tab="tasks";closeDrawer();window.scrollTo({top:0})}render();return}
+  if(el.matches("a[data-stop]")){e.stopPropagation();return}
+  if(el.dataset.tab){if(UI.tab!==el.dataset.tab)UI.search="";UI.tab=el.dataset.tab;closeDrawer();render();window.scrollTo({top:0});return}
+  if(el.dataset.filter){UI.taskFilter=el.dataset.filter;render();return}
+  const a=el.dataset.act;
+  if(!a&&el.dataset.openInv){openInv(el.dataset.openInv);return}
+  if(!a&&el.dataset.openSh){openSh(el.dataset.openSh);return}
+  const inv=S.investors[UI.openInv];
+  if(RO&&!["close-drawer","export"].includes(a)&&!a?.startsWith("edit")){if(a)return}
+  if(a&&a.startsWith("sh-")){shAction(a,el);return}
+  switch(a){
+    case "close-drawer":closeDrawer();break;
+    case "add-investor":if(!RO)investorForm();break;
+    case "edit-investor":if(!RO&&inv)investorForm(inv);break;
+    case "add-contact":if(inv)contactForm(inv);break;
+    case "edit-contact":if(!RO&&inv)contactForm(inv,Number(el.dataset.i));break;
+    case "add-task":taskForm(null,el.dataset.inv);break;
+    case "edit-task":if(!RO)taskForm(S.tasks[el.dataset.id]);break;
+    case "add-disc":discForm(null,el.dataset.inv);break;
+    case "edit-disc":if(!RO)discForm(S.discussions[el.dataset.id]);break;
+    case "add-ms":msForm();break;
+    case "edit-ms":if(!RO)msForm(S.milestones[el.dataset.id]);break;
+    case "toggle-ms":{const m=S.milestones[el.dataset.id];if(m&&!RO){put("milestones",m.id,{...m,done:!m.done});if(!m.done)logAct(`Milestone reached: ${m.title}`,"","milestone")}break}
+    case "edit-round":if(!RO)roundForm();break;
+    case "export":exportReport();break;
+    case "add-meeting":meetingForm(null,el.dataset.inv);break;
+    case "edit-meeting":if(!RO)meetingForm(S.meetings[el.dataset.id]);break;
+    case "held-meeting":{const m=S.meetings[el.dataset.id];if(m&&!RO)discForm(null,m.investorId,m);break}
+  }
+});
+document.addEventListener("change",e=>{
+  const t=e.target;
+  if(t.dataset.shtask){const x=S.shtasks[t.dataset.shtask];if(x)put("shtasks",x.id,{...x,status:t.checked?"done":"open",doneAt:t.checked?nowIso():""});return}
+  if(t.dataset.shStatus){const s=S.stakeholders[t.dataset.shStatus];if(s)put("stakeholders",s.id,{...s,status:t.value,updatedAt:nowIso()});return}
+  if(t.dataset.task){toggleTask(t.dataset.task,t.checked)}
+  else if(t.dataset.stageFor){setStage(t.dataset.stageFor,t.value)}
+});
+document.addEventListener("input",e=>{if(e.target.hasAttribute("data-search")){UI.search=e.target.value;render()}});
+document.addEventListener("keydown",e=>{
+  if(e.key==="Escape"&&(UI.openInv||UI.openSh)&&!$("#dlg").open)closeDrawer();
+  if(e.key==="Enter"&&e.target.classList?.contains("card"))openInv(e.target.dataset.openInv);
+});
+document.addEventListener("dragstart",e=>{const c=e.target.closest?.("[data-drag]");if(c){e.dataTransfer.setData("text/plain",c.dataset.drag);e.dataTransfer.effectAllowed="move"}});
+document.addEventListener("dragover",e=>{const col=e.target.closest?.("[data-col]");if(col){e.preventDefault();document.querySelectorAll(".col.over").forEach(x=>x!==col&&x.classList.remove("over"));col.classList.add("over")}});
+document.addEventListener("dragleave",e=>{const col=e.target.closest?.("[data-col]");if(col&&!col.contains(e.relatedTarget))col.classList.remove("over")});
+document.addEventListener("drop",e=>{const col=e.target.closest?.("[data-col]");if(col){e.preventDefault();col.classList.remove("over");const id=e.dataTransfer.getData("text/plain");if(id)setStage(id,col.dataset.col)}});
+
+/* ---------- boot ---------- */
+async function boot(){
+  let d=null,u=null;
+  try{if(window.claude&&typeof window.claude.use==="function"){[d,u]=await Promise.all([window.claude.use("db"),window.claude.use("user")])}}catch(e){d=null}
+  if(!d&&typeof window.mpSupabaseDb==="function"){try{d=await window.mpSupabaseDb()}catch(e){console.error(e);d=null}}
+  if(d){
+    db=d;mode="shared";
+    try{if(u){const can=await u.can("data.write");if(can===false)RO=true}}catch(e){}
+    document.body.classList.toggle("ro",RO);
+    let pending=COLS.length+1;
+    const done=()=>{if(--pending===0&&!UI.ready){UI.ready=true;render()}};
+    db.doc("round/main").onSnapshot(s=>{if(s.exists)S.round={...S.round,...s.data()};render();if(!done.r){done.r=1;done()}},err=>{if(!done.r){done.r=1;done()}});
+    for(const c of COLS){
+      let first=true;
+      const q=c==="activity"?db.collection(c).orderBy("at","desc").limit(500):db.collection(c);
+      q.onSnapshot(snap=>{const o={};snap.docs.forEach(x=>{o[x.id]={...x.data(),id:x.id}});S[c]=o;render();if(first){first=false;done()}},
+        err=>{if(first){first=false;done()}if(err&&err.code==="revoked"){setRO(true)}});
+    }
+    setTimeout(()=>{if(!UI.ready){UI.ready=true;render()}},8000);
+  }else{
+    loadLocal();mode="local";UI.ready=true;render();
+  }
+}
+boot();
+(async()=>{try{if(window.claude&&typeof window.claude.use==="function")DL=await window.claude.use("downloads")}catch(e){DL=null}})();
+(async()=>{try{if(window.claude&&typeof window.claude.use==="function"){MCP=await window.claude.use("mcp");const u=await window.claude.use("user");if(u&&u.id)VIEWER_ID=await u.id()}}catch(e){MCP=null}})();
+if("serviceWorker" in navigator&&location.protocol!=="file:"){window.addEventListener("load",()=>{navigator.serviceWorker.register("./sw.js").catch(e=>console.warn("Service worker",e))})}
+</script>
+</body>
+</html>
