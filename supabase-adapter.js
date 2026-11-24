@@ -3,7 +3,8 @@
  * Gives the app the same small database interface it used inside Claude
  * (collection().doc().set() / delete() / onSnapshot(), doc("round/main"),
  * orderBy().limit()), backed by one Supabase table: public.mp_docs.
- * Sign-in is by email and password; access is limited to emails listed in public.mp_members.
+ * Sign-in is by email and password; access is limited to emails listed in public.mp_members,
+ * and each person sees only the sections (Investor, Sales) their row allows.
  */
 (function () {
   const cfg = window.MP_CONFIG || {};
@@ -196,10 +197,15 @@
     return askLogin();
   }
 
-  async function isMember(email) {
-    const { data, error } = await sb.from("mp_members").select("email").eq("email", email).limit(1);
-    if (error) throw mapErr(error);
-    return data.length > 0;
+  /* Reads the person's row in mp_members, including which sections they may use.
+     Works before the access columns exist too (then everyone gets both sections). */
+  async function getMember(email) {
+    let r = await sb.from("mp_members").select("email,can_investor,can_sales").eq("email", email).limit(1);
+    if (r.error && /can_investor|can_sales|column/i.test(r.error.message || "")) {
+      r = await sb.from("mp_members").select("email").eq("email", email).limit(1);
+    }
+    if (r.error) throw mapErr(r.error);
+    return r.data[0] || null;
   }
 
   function showAccount(email) {
@@ -215,8 +221,11 @@
   window.mpSupabaseDb = async function () {
     const session = await signIn();
     userEmail = (session.user.email || "").toLowerCase();
-    let ok = false;
-    try { ok = await isMember(userEmail); } catch (e) { ok = false; }
+    let member = null;
+    try { member = await getMember(userEmail); } catch (e) { member = null; }
+    const access = member ? { investor: member.can_investor !== false, sales: member.can_sales !== false } : null;
+    const ok = !!access && (access.investor || access.sales);
+    if (ok) window.MP_ACCESS = access;
     if (!ok) {
       const el = overlay(`
         <h2>No access yet</h2>
