@@ -1051,7 +1051,7 @@ function vSalesOverview(){
         return `<li class="task"><div class="tmain"><button class="linkish" data-act="dl-edit-offer" data-id="${esc(o.id)}">${esc(o.number||"Offer")} v${esc(o.version||1)}</button> ${offerBadge(o)}
         <div class="meta">${d?`<button class="chip" data-open-deal="${esc(d.id)}">${esc(custName(d)||d.name)}</button>`:""}<span>${valTxt(o,true)}</span>${days!=null?`<span>Waiting ${days} day${days===1?"":"s"}</span>`:""}</div></div>
         <span class="due ${k==="expired"?"od":expSoon(o)?"soon":""}">${o.validUntil?(k==="expired"?"Expired ":"Valid to ")+fmtDate(o.validUntil):""}</span></li>`}).join("")}</ul>`:`<div class="empty">No offers waiting for an answer.</div>`}</section>
-    <section class="panel"><div class="panel-head"><h2>Next follow-ups</h2><span class="sp"></span><button class="btn sm ghost" data-dlview="followups">All follow-ups</button></div>
+    <section class="panel"><div class="panel-head"><h2>Next follow-ups</h2><span class="sp"></span><button class="btn sm ghost w" data-act="dl-add-task-any">Add task</button><button class="btn sm ghost" data-dlview="followups">All follow-ups</button></div>
       ${openT.length?`<ul class="clean">${openT.slice(0,6).map(t=>dlTaskRow(t,true)).join("")}</ul>`:`<div class="empty">No open follow-ups.</div>`}
       ${stale.length?`<div class="group-label" style="color:var(--warn)">No next step planned</div><div class="meta">${stale.map(d=>`<button class="chip" data-open-deal="${esc(d.id)}">${esc(d.name)}</button>`).join("")}</div>`:""}</section>
   </div>
@@ -1103,7 +1103,7 @@ function vSalesFollowups(){
   const strip=`<div class="pstrip" role="group" aria-label="Filter follow-ups by responsible person">${card("","Everyone",open)}${salesPeople().map(p=>card(p,p,open.filter(t=>matchPerson(t,p)))).join("")}${un.length||UI.dlPerson==="__none"?card("__none","Unassigned",un):""}</div>`;
   return `<div class="toolbar"><h1>${UI.dlPerson==="__none"?`Unassigned <span class="mint">follow-ups</span>`:UI.dlPerson?`Sales follow-ups for <span class="mint">${esc(UI.dlPerson)}</span>`:`Sales <span class="mint">follow-ups</span>`}</h1><span class="sp"></span>
     <div role="group" aria-label="Filter follow-ups" style="display:flex;gap:4px">${[["open","Pending"],["done","Done"],["all","All"]].map(([k,l])=>`<button class="btn sm ${f===k?"primary":""}" data-dlfilter="${k}">${l}</button>`).join("")}</div>
-    <button class="btn primary w" data-act="dl-add-task-any">Add follow-up</button></div>${strip}<div class="panel">${body}</div>`;
+    <button class="btn primary w" data-act="dl-add-task-any">Add task</button></div>${strip}<div class="panel">${body}</div>`;
 }
 function renderDealDrawer(){
   const dr=$("#drawer"),bd=$("#backdrop"),d=S.deals[UI.openDeal];
@@ -1187,11 +1187,11 @@ function offerForm(o,dealId,base){
 }
 function dlTaskForm(t,dealId){
   const d=S.deals[t?t.dealId:dealId];
-  openForm({title:t?"Edit follow-up":"Add follow-up"+(d?` for ${d.name}`:""),values:t||{due:addDays(today(),7),owner:d?.owner||(UI.dlPerson&&UI.dlPerson!=="__none"?UI.dlPerson:"")},saveLabel:t?"Save changes":"Add follow-up",
-    fields:[...(!t&&!d?[{k:"dealId",label:"Deal",type:"select",options:list("deals").filter(dealOpen).sort((a,b)=>String(a.name).localeCompare(String(b.name),"fi")).map(x=>[x.id,`${x.name}${custName(x)?" · "+custName(x):""}`])}]:[]),
+  openForm({title:t?"Edit sales task":"Add sales task"+(d?` for ${d.name}`:""),values:t||{due:addDays(today(),7),owner:d?.owner||(UI.dlPerson&&UI.dlPerson!=="__none"?UI.dlPerson:"")},saveLabel:t?"Save changes":"Add follow-up",
+    fields:[...(!dealId?[{k:"dealId",label:"Linked deal",type:"select",hint:"(optional)",options:[["","No deal, general sales task"],...list("deals").filter(x=>dealOpen(x)||(t&&x.id===t.dealId)).sort((a,b)=>String(a.name).localeCompare(String(b.name),"fi")).map(x=>[x.id,`${x.name}${custName(x)?" · "+custName(x):""}`])]}]:[]),
       {k:"title",label:"What needs to happen",required:true},{type:"row",fields:[{k:"due",label:"Due date",type:"date"},{k:"owner",label:"Responsible person",opts:everyone()}]},
       {k:"notes",label:"Details",type:"textarea",rows:3},...(t?[{k:"status",label:"Status",type:"select",options:[["open","Pending"],["done","Done"]]}]:[])],
-    onSave:v=>{if(t)put("dealtasks",t.id,{...t,...v,doneAt:v.status==="done"?(t.doneAt||nowIso()):""});else{const dd=d||S.deals[v.dealId];if(dd){const id=uid();put("dealtasks",id,{id,...v,dealId:dd.id,status:"open",doneAt:"",createdAt:nowIso()})}}},
+    onSave:v=>{if(t)put("dealtasks",t.id,{...t,...v,doneAt:v.status==="done"?(t.doneAt||nowIso()):""});else{const id=uid();put("dealtasks",id,{id,...v,dealId:d?d.id:(v.dealId||""),status:"open",doneAt:"",createdAt:nowIso()})}},
     onDelete:t?()=>del("dealtasks",t.id):null});
 }
 function dlLogForm(l,dealId){
@@ -1214,7 +1214,7 @@ function dlAction(a,el){const d=S.deals[UI.openDeal];
     case "dl-offer-version":if(d){const latest=dealOffers(d.id)[0];if(latest)offerForm(null,d.id,latest)}break;
     case "dl-edit-offer":if(S.offers[el.dataset.id])offerForm(S.offers[el.dataset.id]);break;
     case "dl-add-task":if(d)dlTaskForm(null,d.id);break;
-    case "dl-add-task-any":if(!list("deals").some(dealOpen)){toast("Create a deal first, then add follow-ups for it.");break}dlTaskForm(null,null);break;
+    case "dl-add-task-any":dlTaskForm(null,null);break;
     case "dl-edit-task":if(S.dealtasks[el.dataset.id])dlTaskForm(S.dealtasks[el.dataset.id]);break;
     case "dl-add-log":if(d)dlLogForm(null,d.id);break;case "dl-edit-log":if(S.deallog[el.dataset.id])dlLogForm(S.deallog[el.dataset.id]);break;
     case "dl-meeting":if(d&&d.customerId)shMeetingForm(null,d.customerId);break}}
