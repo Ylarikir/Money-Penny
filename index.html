@@ -169,6 +169,12 @@ ul.clean{list-style:none;margin:0;padding:0}
 .tabgrp{align-self:center;font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:0 2px 0 4px;white-space:nowrap}
 .tabgrp:not(:first-child){margin-left:12px;padding-left:16px;border-left:1px solid var(--line)}
 .no-inv .inv-only,.sec-sales .inv-only{display:none!important}
+.fbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 10px}
+.fq{flex:1 1 170px;min-width:130px;padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:var(--bg);color:var(--ink);font-size:13px}
+.fq::placeholder{color:var(--muted)}
+.fsel,.fdate{padding:6px 10px;border:1px solid var(--line);border-radius:999px;background:var(--bg);color:var(--ink);font-size:12.5px;max-width:190px}
+.fq:focus,.fsel:focus,.fdate:focus{border-color:var(--teal);outline:none}
+.fcount{margin:0 0 6px}
 .secswitch{display:inline-flex;gap:4px;padding:4px;margin-top:20px;border:1px solid var(--line);border-radius:999px;background:var(--surface)}
 .secbtn{border:0;background:transparent;color:var(--soft);font-weight:800;font-size:14px;letter-spacing:.1em;text-transform:uppercase;padding:9px 26px;border-radius:999px;cursor:pointer}
 .secbtn:hover{color:var(--ink)}
@@ -484,7 +490,8 @@ function vOverview(){
   const recentD=list("discussions").filter(d=>(d.date||"")>=since);
   const active=inv.filter(i=>!["target","passed"].includes(i.stage));
   const ms=list("milestones").filter(m=>!m.done).sort((a,b)=>(a.date||"9").localeCompare(b.date||"9")).slice(0,4);
-  const discs=list("discussions").sort((a,b)=>(b.date||"").localeCompare(a.date||"")||(b.createdAt||"").localeCompare(a.createdAt||"")).slice(0,5);
+  const discs=list("discussions").sort((a,b)=>(b.date||"").localeCompare(a.date||"")||(b.createdAt||"").localeCompare(a.createdAt||""));
+  const fdis=fapply("id",discs,{text:d=>[d.title,d.notes,d.nextSteps,d.attendees,S.investors[d.investorId]?.name].join(" "),ent:d=>d.investorId,date:d=>d.date,kind:d=>d.kind||"Note",mode:"past"});
   const stale=active.filter(i=>!["committed","closed"].includes(i.stage)&&!nextTask(i.id));
   const mtgs=plannedMeetings();
   if(!inv.length&&!tasks.length)return `<div class="panel" style="max-width:620px">
@@ -499,14 +506,14 @@ function vOverview(){
     <div class="stat ${overdue.length?"alert":""}"><b>${overdue.length}</b><span>Overdue tasks</span></div></div>
   <div class="grid">
     <section class="panel"><div class="panel-head"><h2>Upcoming meetings</h2><span class="sp"></span><button class="btn sm ghost w" data-act="add-meeting">Schedule meeting</button></div>
-      ${mtgs.length?`<ul class="clean">${mtgs.slice(0,6).map(m=>meetingRow(m)).join("")}</ul>${mtgs.length>6?`<div class="meta">${mtgs.length-6} more scheduled</div>`:""}`:`<div class="empty">Schedule investor meetings here. Each one gets a prep task automatically, due ${prepDays()} days before the meeting.</div>`}
+      ${mtgs.length?(()=>{const fm=fapply("im",mtgs,{text:m=>[m.title,m.kind,m.attendees,m.notes,m.location,S.investors[m.investorId]?.name].join(" "),ent:m=>m.investorId,date:m=>m.date,kind:m=>m.kind||"Meeting",mode:"future"});return fbar("im",{ph:"Search meetings",ents:invOpts(),entAll:"All investors",kinds:pairs(MKINDS),mode:"future"})+fcount("im",fm.length,mtgs.length)+(fm.length?`<ul class="clean">${flimit("im",fm,6).map(m=>meetingRow(m)).join("")}</ul>${fmore("im",fm.length,6)}`:`<div class="empty">No meetings match these filters.</div>`)})():`<div class="empty">Schedule investor meetings here. Each one gets a prep task automatically, due ${prepDays()} days before the meeting.</div>`}
     </section>
     <section class="panel"><div class="panel-head"><h2>Next up</h2><span class="sp"></span><button class="btn sm ghost w" data-act="add-task">Add task</button></div>
       ${open.length?`<ul class="clean">${open.slice(0,7).map(t=>taskRow(t)).join("")}</ul>${open.length>7?`<button class="btn sm ghost" data-tab="tasks" style="margin-top:6px">See all ${open.length} open tasks</button>`:""}`:`<div class="empty">No open tasks. Add follow-ups after each meeting so nothing slips.</div>`}
       ${stale.length?`<div class="group-label" style="color:var(--warn)">No next step planned</div><div class="meta">${stale.map(i=>`<button class="chip" data-open-inv="${esc(i.id)}">${esc(i.name)}</button>`).join("")}</div>`:""}
     </section>
     <section class="panel"><div class="panel-head"><h2>Recent discussions</h2><span class="sp"></span><button class="btn sm ghost w" data-act="add-disc">Log discussion</button></div>
-      ${discs.length?discs.map(d=>discBlock(d,true)).join(""):`<div class="empty">Log meetings, calls and emails here to keep the key points and agreed next steps in one place.</div>`}
+      ${discs.length?fbar("id",{ph:"Search discussions",ents:invOpts(),entAll:"All investors",kinds:pairs(KINDS),mode:"past"})+fcount("id",fdis.length,discs.length)+(fdis.length?flimit("id",fdis,5).map(d=>discBlock(d,true)).join("")+fmore("id",fdis.length,5):`<div class="empty">No discussions match these filters.</div>`):`<div class="empty">Log meetings, calls and emails here to keep the key points and agreed next steps in one place.</div>`}
     </section>
     <section class="panel"><div class="panel-head"><h2>Upcoming milestones</h2><span class="sp"></span><button class="btn sm ghost" data-tab="timeline">Timeline</button></div>
       ${ms.length?`<ul class="clean">${ms.map(m=>`<li class="task"><div class="tmain"><button class="linkish" data-act="edit-ms" data-id="${esc(m.id)}">${esc(m.title)}</button></div><span class="due ${m.date&&m.date<td?"od":""}">${fmtDate(m.date)}</span></li>`).join("")}</ul>`:`<div class="empty">Plan key dates like deck ready, first close and final close.<br><button class="btn sm w" data-act="add-ms">Add milestone</button></div>`}
@@ -556,7 +563,7 @@ function vInvestors(){
 function vTasks(){
   const f=UI.taskFilter,td=today();
   const all=list("tasks");
-  let ts=all.filter(t=>matchPerson(t,UI.person));
+  let ts=fapply("tasks",all.filter(t=>matchPerson(t,UI.person)),{text:t=>[t.title,t.notes,S.investors[t.investorId]?.name].join(" "),ent:t=>t.investorId||"__none",date:t=>t.due,mode:"due"});
   if(f==="open")ts=ts.filter(t=>t.status!=="done");else if(f==="done")ts=ts.filter(t=>t.status==="done");
   let body="";
   if(!ts.length)body=`<div class="empty">${f==="done"?"No completed tasks yet.":"No open tasks. Nice work, or time to plan the next follow-ups."}</div>`;
@@ -571,7 +578,7 @@ function vTasks(){
     <div role="group" aria-label="Filter tasks" style="display:flex;gap:4px">${[["open","Pending"],["done","Done"],["all","All"]].map(([k,l])=>`<button class="btn sm ${f===k?"primary":""}" data-filter="${k}">${l}</button>`).join("")}</div>
     <button class="btn primary w" data-act="add-task">Add task</button></div>
   ${personStrip(all)}
-  <div class="panel">${body}</div>`;
+  <div class="panel">${fbar("tasks",{ph:"Search tasks",ents:[...invOpts(),["__none","Not linked to an investor"]],entAll:"All investors",mode:"due"})}${body}</div>`;
 }
 
 function vTimeline(){
@@ -586,7 +593,7 @@ function vTimeline(){
       <div class="when">${m.date?fmtDate(m.date):"No date"}${m.date&&!m.done&&m.date<td?" (missed)":""}</div>${m.notes?`<div class="meta" style="white-space:pre-wrap">${linkify(m.notes)}</div>`:""}</div></li>`;
   }
   if(ms.length&&!placed)msHtml+=`<li class="today-mark"><span class="dot"></span><span>Today, ${fmtDate(td)}</span></li>`;
-  const acts=list("activity").sort((a,b)=>(b.at||"").localeCompare(a.at||"")).slice(0,200);
+  const actAll=list("activity").sort((a,b)=>(b.at||"").localeCompare(a.at||""));const actF=fapply("act",actAll,{text:a=>[a.text,S.investors[a.investorId]?.name].join(" "),ent:a=>a.investorId,date:a=>a.at,mode:"past"});const acts=ff("act").all||fActive("act")?actF:actF.slice(0,200);
   let actHtml="",lastDay="";
   for(const a of acts){const d=new Date(a.at);const day=d.toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
     if(day!==lastDay){actHtml+=`<div class="act-day">${day}</div>`;lastDay=day}
@@ -595,8 +602,8 @@ function vTimeline(){
   return `<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr));align-items:start">
     <section class="panel"><div class="panel-head"><h2>Round timeline</h2><span class="sp"></span><button class="btn sm primary w" data-act="add-ms">Add milestone</button></div>
       ${ms.length?`<ul class="ms" style="margin-top:8px">${msHtml}</ul>`:`<div class="empty">Add the key dates of your round, for example: deck and data room ready, first investor meetings, term sheet deadline, first close, final close.</div>`}</section>
-    <section class="panel"><div class="panel-head"><h2>Actions taken</h2></div>
-      ${acts.length?actHtml:`<div class="empty">Every stage change, logged discussion and completed task shows up here automatically.</div>`}</section></div>`;
+    <section class="panel"><div class="panel-head"><h2>Actions taken</h2></div>${actAll.length?fbar("act",{ph:"Search actions",ents:invOpts(),entAll:"All investors",mode:"past"})+fcount("act",actF.length,actAll.length):""}
+      ${acts.length?actHtml+fmore("act",actF.length,200):actAll.length?`<div class="empty">No actions match these filters.</div>`:`<div class="empty">Every stage change, logged discussion and completed task shows up here automatically.</div>`}</section></div>`;
 }
 
 /* ---------- drawer ---------- */
@@ -648,9 +655,10 @@ function render(){
   if(!UI.ready)return;
   renderHeader();
   {const hideRound=UI.tab==="sales"||UI.tab==="stakeholders"||!mpAccess().investor;$("#meter").style.display=hideRound?"none":"";$("#roundSub").style.display=hideRound?"none":"";$("#tabs").style.marginTop=hideRound?"20px":""}
-  const v=$("#view");const active=document.activeElement;const searching=active&&active.hasAttribute&&active.hasAttribute("data-search");const caret=searching?active.selectionStart:0;
+  const v=$("#view");const active=document.activeElement;const searching=active&&active.hasAttribute&&active.hasAttribute("data-search");const fqk=active&&active.dataset?active.dataset.fq:null;const caret=searching||fqk?active.selectionStart:0;
   v.innerHTML={overview:vOverview,pipeline:vPipeline,investors:vInvestors,tasks:vTasks,timeline:vTimeline,stakeholders:vStakeholders,sales:vSales}[UI.tab]();
   if(searching){const s=v.querySelector("[data-search]");if(s){s.focus();s.setSelectionRange(caret,caret)}}
+  if(fqk){const s=document.querySelector(`[data-fq="${fqk}"]`);if(s){s.focus();try{s.setSelectionRange(caret,caret)}catch(e){}}}
   if(UI.openInv&&!S.investors[UI.openInv])UI.openInv=null;
   if(UI.openSh&&!S.stakeholders[UI.openSh])UI.openSh=null;
   if(UI.openDeal&&!S.deals[UI.openDeal])UI.openDeal=null;
@@ -821,7 +829,7 @@ function shPeople(){const m=new Map();for(const o of [...list("shtasks").map(t=>
 function shSubnav(){const n=list("shtasks").filter(t=>t.status!=="done").length;return `<div role="tablist" aria-label="Stakeholder views" style="display:flex;gap:6px;margin-bottom:18px">${[["list","Stakeholders & partners",list("stakeholders").length],["followups","Follow-ups",n]].map(([k,l,c])=>`<button class="btn sm ${UI.shView===k?"primary":""}" role="tab" aria-selected="${UI.shView===k}" data-shview="${k}">${l}${c?` <span style="opacity:.7;margin-left:2px">${c}</span>`:""}</button>`).join("")}</div>`}
 function vShFollowups(){
   const f=UI.shFilter,td=today(),all=list("shtasks");
-  let ts=all.filter(t=>matchPerson(t,UI.shPerson));
+  let ts=fapply("shf",all.filter(t=>matchPerson(t,UI.shPerson)),{text:t=>[t.title,t.notes,S.stakeholders[t.shId]?.name].join(" "),ent:t=>t.shId,date:t=>t.due,mode:"due"});
   if(f==="open")ts=ts.filter(t=>t.status!=="done");else if(f==="done")ts=ts.filter(t=>t.status==="done");
   let body="";
   if(!ts.length)body=`<div class="empty">${f==="done"?"No completed follow-ups yet.":"No open follow-ups. Add follow-ups after stakeholder discussions so nothing slips."}</div>`;
@@ -836,7 +844,7 @@ function vShFollowups(){
   const strip=`<div class="pstrip" role="group" aria-label="Filter follow-ups by responsible person">${card("","Everyone",open)}${shPeople().map(p=>card(p,p,open.filter(t=>matchPerson(t,p)))).join("")}${un.length||UI.shPerson==="__none"?card("__none","Unassigned",un):""}</div>`;
   return `${shSubnav()}<div class="toolbar"><h1>${UI.shPerson==="__none"?`Unassigned <span class="mint">follow-ups</span>`:UI.shPerson?`Follow-ups for <span class="mint">${esc(UI.shPerson)}</span>`:`Stakeholder <span class="mint">follow-ups</span>`}</h1><span class="sp"></span>
     <div role="group" aria-label="Filter follow-ups" style="display:flex;gap:4px">${[["open","Pending"],["done","Done"],["all","All"]].map(([k,l])=>`<button class="btn sm ${f===k?"primary":""}" data-shfilter="${k}">${l}</button>`).join("")}</div>
-    <button class="btn primary w" data-act="sh-add-task-any">Add follow-up</button></div>${strip}<div class="panel">${body}</div>`;
+    <button class="btn primary w" data-act="sh-add-task-any">Add follow-up</button></div>${strip}<div class="panel">${fbar("shf",{ph:"Search follow-ups",ents:shOpts(),entAll:"All stakeholders",mode:"due"})}${body}</div>`;
 }
 const shLogs=id=>list("shlog").filter(l=>l.shId===id).sort((a,b)=>(b.date||"").localeCompare(a.date||"")||(b.createdAt||"").localeCompare(a.createdAt||""));
 const shTasks=id=>list("shtasks").filter(t=>t.shId===id);
@@ -867,7 +875,7 @@ function vStakeholders(){
     <td>${(s.contacts||[]).map(c=>`<div class="person"><b>${esc(c.name)}</b>${c.role?` <span class="meta" style="display:inline">${esc(c.role)}</span>`:""}<br>${c.email?`<a href="mailto:${esc(c.email)}" data-stop>${esc(c.email)}</a>`:""}${c.phone?`<a href="tel:${esc(c.phone.replace(/\s/g,""))}" data-stop>${esc(c.phone)}</a>`:""}</div>`).join("")||`<span class="meta">No contacts yet</span>`}</td>
     <td>${lc?fmtDate(lc):`<span class="meta">Never</span>`}</td><td>${ot.length?`${ot.length}${ot.some(t=>dueClass(t)==="od")?` <span class="due od">overdue</span>`:""}`:`<span class="meta">None</span>`}</td></tr>`}).join("")}
   </tbody></table></div>`:`<div class="panel empty">${all.length?"No stakeholders match this search or category.":`No stakeholders yet. Add partners, advisors, public-sector contacts and other important relationships here.<br><button class="btn sm primary w" data-act="sh-add">Add stakeholder</button>`}</div>`}
-  <div class="grid" style="margin-top:18px;align-items:start"><section class="panel"><div class="panel-head"><h2>Upcoming meetings</h2></div>${shPlanned().length?`<ul class="clean">${shPlanned().map(m=>shMeetingRow(m,true)).join("")}</ul>`:`<div class="empty">No meetings scheduled. Open a stakeholder to schedule one.</div>`}</section>
+  <div class="grid" style="margin-top:18px;align-items:start"><section class="panel"><div class="panel-head"><h2>Upcoming meetings</h2></div>${shPlanned().length?(()=>{const all=shPlanned(),fm=fapply("shm",all,{text:m=>[m.title,m.kind,m.attendees,m.notes,m.location,S.stakeholders[m.shId]?.name].join(" "),ent:m=>m.shId,date:m=>m.date,kind:m=>m.kind||"Meeting",mode:"future"});return fbar("shm",{ph:"Search meetings",ents:shOpts(),entAll:"All stakeholders",kinds:pairs(MKINDS),mode:"future"})+fcount("shm",fm.length,all.length)+(fm.length?`<ul class="clean">${flimit("shm",fm,6).map(m=>shMeetingRow(m,true)).join("")}</ul>${fmore("shm",fm.length,6)}`:`<div class="empty">No meetings match these filters.</div>`)})():`<div class="empty">No meetings scheduled. Open a stakeholder to schedule one.</div>`}</section>
   <section class="panel"><div class="panel-head"><h2>Open follow-ups</h2><span class="sp"></span><button class="btn sm ghost" data-shview="followups">All follow-ups</button></div>${open.length?`<ul class="clean">${open.map(t=>shTaskRow(t,true)).join("")}</ul>`:`<div class="empty">No open follow-ups with stakeholders.</div>`}</section></div>`;
 }
 function renderShDrawer(){
@@ -1054,6 +1062,7 @@ function vSalesOverview(){
     <section class="panel"><div class="panel-head"><h2>Next follow-ups</h2><span class="sp"></span><button class="btn sm ghost w" data-act="dl-add-task-any">Add task</button><button class="btn sm ghost" data-dlview="followups">All follow-ups</button></div>
       ${openT.length?`<ul class="clean">${openT.slice(0,6).map(t=>dlTaskRow(t,true)).join("")}</ul>`:`<div class="empty">No open follow-ups.</div>`}
       ${stale.length?`<div class="group-label" style="color:var(--warn)">No next step planned</div><div class="meta">${stale.map(d=>`<button class="chip" data-open-deal="${esc(d.id)}">${esc(d.name)}</button>`).join("")}</div>`:""}</section>
+    ${salesDiscPanel()}
   </div>
     <section class="panel" style="margin-top:18px"><div class="panel-head"><h2>Forecast, weighted</h2></div>
       <div style="overflow-x:auto"><table style="min-width:0"><thead><tr><th>Close month</th><th class="num">Deals</th><th class="num">One-off</th><th class="num">Recurring</th></tr></thead><tbody>${fc}</tbody></table></div>
@@ -1076,7 +1085,9 @@ function vSalesOffers(){
   const f=UI.offFilter;let os=list("offers");
   if(f==="waiting")os=os.filter(o=>o.status==="sent");
   os.sort((a,b)=>(b.sentDate||b.createdAt||"").localeCompare(a.sentDate||a.createdAt||""));
+  const osAll=os.length;os=fapply("off",os,{text:o=>{const d=S.deals[o.dealId];return [o.number,o.notes,d?.name,d?custName(d):""].join(" ")},ent:o=>S.deals[o.dealId]?.customerId||"",date:o=>o.sentDate,kind:o=>offerState(o)[0],mode:"past"});
   return salesHead(`Offer <span class="mint">tracking</span>`)+`<div role="group" aria-label="Filter offers" style="display:flex;gap:6px;margin-bottom:14px">${[["waiting","Awaiting reply"],["all","All offers"]].map(([k,l])=>`<button class="btn sm ${f===k?"primary":""}" data-offfilter="${k}" aria-pressed="${f===k}">${l}</button>`).join("")}</div>
+  ${fbar("off",{ph:"Search offers",ents:shOpts().filter(([id])=>list("deals").some(d=>d.customerId===id)),entAll:"All customers",kinds:[...OSTATUS,["expired","Expired"]],kindAll:"All statuses",mode:"past"})}${fcount("off",os.length,osAll)}
   ${os.length?`<div class="tbl-wrap"><table><thead><tr><th>Offer</th><th>Customer and deal</th><th>Status</th><th>Sent</th><th>Valid until</th><th class="num">Amount</th><th>Document</th></tr></thead><tbody>
   ${os.map(o=>{const d=S.deals[o.dealId];const [k]=offerState(o);const days=o.status==="sent"&&o.sentDate?daysBetween(o.sentDate,today()):null;
     return `<tr data-open-deal="${esc(o.dealId)}"><td><div class="firm">${esc(o.number||"Offer")} v${esc(o.version||1)}</div></td>
@@ -1084,11 +1095,11 @@ function vSalesOffers(){
     <td>${o.sentDate?fmtDate(o.sentDate):"–"}</td><td><span class="due ${k==="expired"?"od":expSoon(o)?"soon":""}">${o.validUntil?fmtDate(o.validUntil):"–"}</span></td>
     <td class="num">${num(o.oneOff)?fmtMoney(o.oneOff):""}${num(o.oneOff)&&num(o.recurring)?"<br>":""}${num(o.recurring)?fmtMoney(o.recurring)+"/yr":""}${!num(o.oneOff)&&!num(o.recurring)?"–":""}</td>
     <td>${o.docLink?linkify(o.docLink):`<span class="meta">–</span>`}</td></tr>`}).join("")}
-  </tbody></table></div>`:`<div class="panel empty">${f==="waiting"?"No offers are waiting for an answer.":"No offers yet. Open a deal and create an offer from there."}</div>`}`;
+  </tbody></table></div>`:`<div class="panel empty">${fActive("off")?"No offers match these filters.":f==="waiting"?"No offers are waiting for an answer.":"No offers yet. Open a deal and create an offer from there."}</div>`}`;
 }
 function vSalesFollowups(){
   const f=UI.dlFilter,td=today(),all=list("dealtasks");
-  let ts=all.filter(t=>matchPerson(t,UI.dlPerson));
+  let ts=fapply("dlt",all.filter(t=>matchPerson(t,UI.dlPerson)),{text:t=>{const d=S.deals[t.dealId];return [t.title,t.notes,d?.name,d?custName(d):""].join(" ")},ent:t=>t.dealId||"__general",date:t=>t.due,mode:"due"});
   if(f==="open")ts=ts.filter(t=>t.status!=="done");else if(f==="done")ts=ts.filter(t=>t.status==="done");
   let body="";
   if(!ts.length)body=`<div class="empty">${f==="done"?"No completed follow-ups yet.":"No open sales follow-ups."}</div>`;
@@ -1103,7 +1114,7 @@ function vSalesFollowups(){
   const strip=`<div class="pstrip" role="group" aria-label="Filter follow-ups by responsible person">${card("","Everyone",open)}${salesPeople().map(p=>card(p,p,open.filter(t=>matchPerson(t,p)))).join("")}${un.length||UI.dlPerson==="__none"?card("__none","Unassigned",un):""}</div>`;
   return `<div class="toolbar"><h1>${UI.dlPerson==="__none"?`Unassigned <span class="mint">follow-ups</span>`:UI.dlPerson?`Sales follow-ups for <span class="mint">${esc(UI.dlPerson)}</span>`:`Sales <span class="mint">follow-ups</span>`}</h1><span class="sp"></span>
     <div role="group" aria-label="Filter follow-ups" style="display:flex;gap:4px">${[["open","Pending"],["done","Done"],["all","All"]].map(([k,l])=>`<button class="btn sm ${f===k?"primary":""}" data-dlfilter="${k}">${l}</button>`).join("")}</div>
-    <button class="btn primary w" data-act="dl-add-task-any">Add task</button></div>${strip}<div class="panel">${body}</div>`;
+    <button class="btn primary w" data-act="dl-add-task-any">Add task</button></div>${strip}<div class="panel">${fbar("dlt",{ph:"Search sales tasks",ents:[...list("deals").slice().sort((a,b)=>String(a.name).localeCompare(String(b.name),"fi")).map(d=>[d.id,`${d.name}${custName(d)?" · "+custName(d):""}`]),["__general","General sales tasks"]],entAll:"All deals",mode:"due"})}${body}</div>`;
 }
 function renderDealDrawer(){
   const dr=$("#drawer"),bd=$("#backdrop"),d=S.deals[UI.openDeal];
@@ -1222,6 +1233,47 @@ document.addEventListener("dragstart",e=>{const c=e.target.closest?.("[data-ddra
 document.addEventListener("dragover",e=>{const col=e.target.closest?.("[data-dcol]");if(col){e.preventDefault();document.querySelectorAll(".col.over").forEach(x=>x!==col&&x.classList.remove("over"));col.classList.add("over")}});
 document.addEventListener("dragleave",e=>{const col=e.target.closest?.("[data-dcol]");if(col&&!col.contains(e.relatedTarget))col.classList.remove("over")});
 document.addEventListener("drop",e=>{const col=e.target.closest?.("[data-dcol]");if(col){e.preventDefault();col.classList.remove("over");const id=e.dataTransfer.getData("text/deal");if(id)setDealStage(id,col.dataset.dcol)}});
+
+/* ---------- list search and filters ---------- */
+UI.f={};
+const ff=k=>UI.f[k]||(UI.f[k]={q:"",ent:"",range:"",from:"",to:"",kind:"",all:false});
+const pairs=a=>a.map(k=>Array.isArray(k)?k:[k,k]);
+const byNameOpts=arr=>arr.slice().sort((a,b)=>String(a.name||"").localeCompare(String(b.name||""),"fi",{sensitivity:"base"})).map(x=>[x.id,x.name]);
+const invOpts=()=>byNameOpts(list("investors"));
+const shOpts=()=>byNameOpts(list("stakeholders"));
+const FRANGES={future:[["","All upcoming"],["today","Today"],["7","Next 7 days"],["30","Next 30 days"],["custom","Date range…"]],
+  past:[["","Any time"],["7","Last 7 days"],["30","Last 30 days"],["90","Last 90 days"],["custom","Date range…"]],
+  due:[["","Any due date"],["overdue","Overdue"],["7","Due in next 7 days"],["30","Due in next 30 days"],["nodate","No due date"],["custom","Date range…"]]};
+function fActive(k){const f=ff(k);return !!(f.q.trim()||f.ent||f.range||f.kind)}
+function fInRange(d,f,mode){const r=f.range;if(!r)return true;if(r==="nodate")return !d;if(!d)return false;d=String(d).slice(0,10);const td=today();
+  if(r==="custom")return (!f.from||d>=f.from)&&(!f.to||d<=f.to);
+  if(r==="today")return d===td;if(r==="overdue")return d<td;
+  const n=+r;return mode==="past"?(d>=addDays(td,-n)&&d<=td):(d>=td&&d<=addDays(td,n))}
+function fapply(k,items,o){const f=ff(k),q=f.q.trim().toLowerCase();
+  return items.filter(x=>(!q||String(o.text(x)||"").toLowerCase().includes(q))&&(!f.ent||!o.ent||o.ent(x)===f.ent)&&(!o.date||fInRange(o.date(x),f,o.mode))&&(!f.kind||!o.kind||o.kind(x)===f.kind))}
+function fbar(k,o){const f=ff(k);
+  const sel=(attr,val,opts,label)=>`<select class="fsel" ${attr}="${k}" aria-label="${esc(label)}">${opts.map(([v,l])=>`<option value="${esc(v)}" ${String(val)===String(v)?"selected":""}>${esc(l)}</option>`).join("")}</select>`;
+  return `<div class="fbar"><input class="fq" type="search" placeholder="${esc(o.ph||"Search")}" value="${esc(f.q)}" data-fq="${k}" aria-label="${esc(o.ph||"Search")}">${o.ents?sel("data-fent",f.ent,[["",o.entAll||"All"],...o.ents],o.entLabel||"Filter by organisation"):""}${o.kinds?sel("data-fkind",f.kind,[["",o.kindAll||"All types"],...o.kinds],"Type"):""}${o.mode?sel("data-frange",f.range,FRANGES[o.mode],"Date"):""}${f.range==="custom"?`<input class="fdate" type="date" value="${esc(f.from)}" data-ffrom="${k}" aria-label="From date"><span class="meta" style="margin:0">to</span><input class="fdate" type="date" value="${esc(f.to)}" data-fto="${k}" aria-label="To date">`:""}${fActive(k)?`<button class="btn sm ghost" data-fclear="${k}">Clear</button>`:""}</div>`}
+function fcount(k,shown,total){return fActive(k)?`<div class="meta fcount">${shown} of ${total} shown</div>`:""}
+function flimit(k,arr,n){return ff(k).all||fActive(k)?arr:arr.slice(0,n)}
+function fmore(k,total,n){if(fActive(k)||total<=n)return "";return `<button class="btn sm ghost" data-fall="${k}" style="margin-top:6px">${ff(k).all?"Show fewer":`Show all ${total}`}</button>`}
+function salesDiscBlock(x){const isSh=x._src==="sh",s=isSh?S.stakeholders[x.shId]:null,d=isSh?null:S.deals[x.dealId];
+  return `<div class="disc"><div class="disc-head"><span class="disc-date">${fmtDate(x.date)}</span><span class="kind">${esc(x.kind||"Note")}</span><button class="linkish" data-act="${isSh?"sh-edit-log":"dl-edit-log"}" data-id="${esc(x.id)}" style="font-weight:700">${esc(x.title||"Untitled")}</button>
+  ${s?`<button class="chip" data-open-sh="${esc(s.id)}">${esc(s.name)}</button>`:""}${d?`<button class="chip" data-open-deal="${esc(d.id)}">${esc(d.name)}${custName(d)?` · ${esc(custName(d))}`:""}</button>`:""}</div>
+  ${x.attendees?`<div class="meta">With ${esc(x.attendees)}</div>`:""}${x.notes?`<p>${linkify(x.notes)}</p>`:""}${x.nextSteps?`<div class="next"><b>Next steps:</b> ${linkify(x.nextSteps)}</div>`:""}</div>`}
+function salesDiscPanel(){
+  const all=[...list("shlog").map(x=>({...x,_src:"sh"})),...list("deallog").map(x=>({...x,_src:"dl"}))].sort((a,b)=>(b.date||"").localeCompare(a.date||"")||(b.createdAt||"").localeCompare(a.createdAt||""));
+  const org=x=>x._src==="sh"?x.shId:(S.deals[x.dealId]?.customerId||"");
+  const fl=fapply("sd",all,{text:x=>[x.title,x.notes,x.nextSteps,x.attendees,x._src==="sh"?S.stakeholders[x.shId]?.name:"",x._src==="dl"?(S.deals[x.dealId]?.name+" "+custName(S.deals[x.dealId]||{})):""].join(" "),ent:org,date:x=>x.date,kind:x=>x.kind||"Note",mode:"past"});
+  return `<section class="panel"><div class="panel-head"><h2>Recent discussions</h2></div>
+    ${all.length?fbar("sd",{ph:"Search discussions",ents:shOpts(),entAll:"All customers & stakeholders",kinds:pairs(KINDS),mode:"past"})+fcount("sd",fl.length,all.length)+(fl.length?flimit("sd",fl,5).map(salesDiscBlock).join("")+fmore("sd",fl.length,5):`<div class="empty">No discussions match these filters.</div>`):`<div class="empty">Discussions logged on stakeholders and deals show up here.</div>`}</section>`}
+document.addEventListener("input",e=>{const t=e.target;if(t&&t.dataset&&t.dataset.fq){ff(t.dataset.fq).q=t.value;render()}});
+document.addEventListener("change",e=>{const t=e.target,d=t&&t.dataset;if(!d)return;
+  if(d.fent){ff(d.fent).ent=t.value;render()}else if(d.fkind){ff(d.fkind).kind=t.value;render()}
+  else if(d.frange){const f=ff(d.frange);f.range=t.value;if(t.value!=="custom"){f.from="";f.to=""}render()}
+  else if(d.ffrom){ff(d.ffrom).from=t.value;render()}else if(d.fto){ff(d.fto).to=t.value;render()}});
+document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-fclear],[data-fall]");if(!b)return;
+  if(b.dataset.fclear){UI.f[b.dataset.fclear]={q:"",ent:"",range:"",from:"",to:"",kind:"",all:false}}else{const f=ff(b.dataset.fall);f.all=!f.all}render()});
 
 /* ---------- google calendar ---------- */
 let MCP=null,VIEWER_ID="";const CAL="Google Calendar";
