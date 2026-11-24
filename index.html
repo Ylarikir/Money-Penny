@@ -168,7 +168,11 @@ ul.clean{list-style:none;margin:0;padding:0}
 .prio.medium{border-color:var(--teal);color:var(--ink)}
 .tabgrp{align-self:center;font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:0 2px 0 4px;white-space:nowrap}
 .tabgrp:not(:first-child){margin-left:12px;padding-left:16px;border-left:1px solid var(--line)}
-.no-inv .inv-only{display:none!important}
+.no-inv .inv-only,.sec-sales .inv-only{display:none!important}
+.secswitch{display:inline-flex;gap:4px;padding:4px;margin-top:20px;border:1px solid var(--line);border-radius:999px;background:var(--surface)}
+.secbtn{border:0;background:transparent;color:var(--soft);font-weight:800;font-size:14px;letter-spacing:.1em;text-transform:uppercase;padding:9px 26px;border-radius:999px;cursor:pointer}
+.secbtn:hover{color:var(--ink)}
+.secbtn[aria-selected="true"]{background:var(--accent);color:var(--accent-ink)}
 .addgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
 .addopt{text-align:left;border:1px solid var(--line);background:var(--bg);border-radius:var(--r);padding:10px 12px;cursor:pointer;display:flex;flex-direction:column;gap:2px;color:var(--ink)}
 .addopt:hover,.addopt:focus-visible{border-color:var(--teal)}
@@ -302,6 +306,7 @@ dialog::backdrop{background:rgba(5,10,14,.65)}
       <button class="btn sm w inv-only" data-act="add-meeting">Schedule meeting</button>
       <button class="btn sm primary w" data-act="add-any">+ Add new</button>
     </div>
+    <div id="secswitch"></div>
     <div class="meter-block" id="meter"></div>
     <nav class="tabs" role="tablist" id="tabs"></nav>
   </div>
@@ -437,11 +442,16 @@ function renderHeader(){
   const openT=list("tasks").filter(t=>t.status!=="done").length;
   const AC=mpAccess();document.body.classList.toggle("no-inv",!AC.investor);document.body.classList.toggle("no-sales",!AC.sales);
   const invTabs=[["overview","Overview"],["pipeline","Pipeline"],["investors","Investors & contacts",inv.length],["tasks","Tasks",openT],["timeline","Timeline"]];
-  const salesTabs=[["sales","Sales",list("deals").filter(dealOpen).length],["stakeholders","Stakeholders",list("stakeholders").length]];
-  const allowed=[...(AC.investor?invTabs:[]),...(AC.sales?salesTabs:[])].map(t=>t[0]);
-  if(!allowed.includes(UI.tab))UI.tab=allowed[0]||"overview";
-  const tb=([k,l,n])=>`<button class="tab" role="tab" aria-selected="${UI.tab===k}" data-tab="${k}">${l}${n?`<span class="n">${n}</span>`:""}</button>`;
-  $("#tabs").innerHTML=AC.investor&&AC.sales?`<span class="tabgrp">Investor</span>${invTabs.map(tb).join("")}<span class="tabgrp">Sales</span>${salesTabs.map(tb).join("")}`:(AC.investor?invTabs:salesTabs).map(tb).join("");
+  const salesTabs=[["sales-overview","Overview"],["sales-pipeline","Pipeline",list("deals").filter(dealOpen).length],["sales-offers","Offers",list("offers").filter(o=>o.status==="sent").length],["sales-followups","Follow-ups",list("dealtasks").filter(t=>t.status!=="done").length],["stakeholders","Stakeholders",list("stakeholders").length]];
+  const allowed=[...(AC.investor?invTabs.map(t=>t[0]):[]),...(AC.sales?["sales","stakeholders"]:[])];
+  if(!allowed.includes(UI.tab))UI.tab=AC.investor?"overview":"sales";
+  const sec=UI.tab==="sales"||UI.tab==="stakeholders"?"sales":"investor";
+  const cur=UI.tab==="sales"?"sales-"+(UI.dlView||"overview"):UI.tab;
+  if(sec==="sales")UI.lastSales=cur;else UI.lastInv=cur;
+  document.body.classList.toggle("sec-sales",sec==="sales");
+  const tb=([k,l,n])=>`<button class="tab" role="tab" aria-selected="${cur===k}" data-tab="${k}">${l}${n?`<span class="n">${n}</span>`:""}</button>`;
+  $("#tabs").innerHTML=(sec==="sales"?salesTabs:invTabs).map(tb).join("");
+  $("#secswitch").innerHTML=AC.investor&&AC.sales?`<div class="secswitch" role="tablist" aria-label="Section">${[["investor","Investor"],["sales","Sales"]].map(([k,l])=>`<button class="secbtn" role="tab" aria-selected="${sec===k}" data-section="${k}">${l}</button>`).join("")}</div>`:"";
   {const l=$("#brandLbl");if(l)l.textContent=AC.investor&&AC.sales?"Investor & sales CRM":AC.investor?"Investor CRM":"Sales CRM"}
   $("#foot").textContent=mode==="shared"?"Changes are saved and shared live with everyone who has access to this page.":"Changes are saved in this browser only.";
 }
@@ -1011,7 +1021,7 @@ function dlSubnav(){const n=list("dealtasks").filter(t=>t.status!=="done").lengt
   return `<div role="tablist" aria-label="Sales views" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px">${[["overview","Overview"],["pipeline","Pipeline",list("deals").filter(dealOpen).length],["offers","Offers",w],["followups","Follow-ups",n]].map(([k,l,c])=>`<button class="btn sm ${UI.dlView===k?"primary":""}" role="tab" aria-selected="${UI.dlView===k}" data-dlview="${k}">${l}${c?` <span style="opacity:.7;margin-left:2px">${c}</span>`:""}</button>`).join("")}</div>`}
 function vSales(){
   const body={overview:vSalesOverview,pipeline:vSalesPipeline,offers:vSalesOffers,followups:vSalesFollowups}[UI.dlView]||vSalesOverview;
-  return dlSubnav()+body();
+  return body();
 }
 function salesHead(title){return `<div class="toolbar"><h1>${title}</h1><span class="sp"></span><button class="btn primary w" data-act="dl-add">New deal</button></div>`}
 function vSalesOverview(){
@@ -1359,7 +1369,7 @@ async function exportReport(){
 /* ---------- events ---------- */
 
 document.addEventListener("click",e=>{
-  const el=e.target.closest("[data-act],[data-tab],[data-open-inv],[data-filter],[data-person],[data-sort],[data-prio],[data-open-sh],[data-shcat],[data-shview],[data-shfilter],[data-shperson],[data-open-deal],[data-dlview],[data-dlfilter],[data-dlperson],[data-offfilter],a[data-stop]");if(!el)return;
+  const el=e.target.closest("[data-act],[data-tab],[data-open-inv],[data-filter],[data-person],[data-sort],[data-prio],[data-section],[data-open-sh],[data-shcat],[data-shview],[data-shfilter],[data-shperson],[data-open-deal],[data-dlview],[data-dlfilter],[data-dlperson],[data-offfilter],a[data-stop]");if(!el)return;
   if(el.dataset.shcat!==undefined){UI.shCat=el.dataset.shcat;render();return}
   if(el.dataset.dlview){UI.dlView=el.dataset.dlview;render();window.scrollTo({top:0});return}
   if(el.dataset.dlfilter){UI.dlFilter=el.dataset.dlfilter;render();return}
@@ -1372,7 +1382,8 @@ document.addEventListener("click",e=>{
   if(el.dataset.prio!==undefined){UI.prio=el.dataset.prio;render();return}
   if(el.dataset.person!==undefined){UI.person=el.dataset.person;if(UI.tab!=="tasks"){UI.tab="tasks";closeDrawer();window.scrollTo({top:0})}render();return}
   if(el.matches("a[data-stop]")){e.stopPropagation();return}
-  if(el.dataset.tab){if(UI.tab!==el.dataset.tab)UI.search="";UI.tab=el.dataset.tab;closeDrawer();render();window.scrollTo({top:0});return}
+  if(el.dataset.section){const t=el.dataset.section==="sales"?(UI.lastSales||"sales-overview"):(UI.lastInv||"overview");if(t.startsWith("sales-")){UI.dlView=t.slice(6);UI.tab="sales"}else UI.tab=t;UI.search="";closeDrawer();render();window.scrollTo({top:0});return}
+  if(el.dataset.tab){let t=el.dataset.tab;if(t.startsWith("sales-")){UI.dlView=t.slice(6);t="sales"}if(UI.tab!==t)UI.search="";UI.tab=t;closeDrawer();render();window.scrollTo({top:0});return}
   if(el.dataset.filter){UI.taskFilter=el.dataset.filter;render();return}
   const a=el.dataset.act;
   if(!a&&el.dataset.openInv){openInv(el.dataset.openInv);return}
