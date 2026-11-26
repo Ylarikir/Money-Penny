@@ -175,6 +175,9 @@ ul.clean{list-style:none;margin:0;padding:0}
 .fsel,.fdate{padding:6px 10px;border:1px solid var(--line);border-radius:999px;background:var(--bg);color:var(--ink);font-size:12.5px;max-width:190px}
 .fq:focus,.fsel:focus,.fdate:focus{border-color:var(--teal);outline:none}
 .fcount{margin:0 0 6px}
+.dealchip{border-color:var(--accent);font-size:12.5px;padding:2px 12px}
+.btable td{vertical-align:middle}.btable .bgroup td{background:var(--surface2);font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:7px 16px}
+.btable .num .meta{justify-content:flex-end}
 .sec-proj .inv-only{display:none!important}
 .pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px}
 .pcardp{text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;cursor:pointer;display:flex;flex-direction:column;gap:6px;color:var(--text);font:inherit}
@@ -313,7 +316,8 @@ dialog::backdrop{background:rgba(5,10,14,.65)}
 .form input::placeholder,.form textarea::placeholder{color:var(--muted)}
 .form textarea{resize:vertical;min-height:90px}
 .t24{display:flex;align-items:center;gap:6px}.t24 select{flex:1;min-width:0}.t24 b{color:var(--ink);font-weight:700}
-.form .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form .row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+.form label{min-width:0}.form select{width:100%;min-width:0;text-overflow:ellipsis}
 .form .err{color:var(--danger);font-size:12px;font-weight:600;text-transform:none;letter-spacing:0}
 .form [aria-invalid="true"]{border-color:var(--danger)}
 .form-actions{display:flex;gap:8px;align-items:center;margin-top:6px}
@@ -393,11 +397,11 @@ const TYPES=["VC","Angel","Corporate","Family office","Public funding","Other"];
 const KINDS=["Meeting","Call","Email","Event","Other"];
 const MKINDS=["Meeting","Call","Event","Other"];
 const DEFAULT_CHECKLIST="- Check the latest deck version\n- Update the financial model and key numbers\n- Check data room access for the attendees\n- Read up on the investor and the people attending\n- Agree who presents what, and the ask";
-const COLS=["investors","discussions","tasks","milestones","meetings","activity","stakeholders","shlog","shtasks","shmeetings","deals","offers","dealtasks","deallog","team","projects","ptasks"];
+const COLS=["investors","discussions","tasks","milestones","meetings","activity","stakeholders","shlog","shtasks","shmeetings","deals","offers","dealtasks","deallog","team","projects","ptasks","pbudget","pactuals"];
 const LS_KEY="investor-round-crm-v1";
 
 /* ---------- state ---------- */
-const S={round:{name:"Investor round",target:null,currency:"EUR",closeDate:""},investors:{},discussions:{},tasks:{},milestones:{},meetings:{},activity:{},stakeholders:{},shlog:{},shtasks:{},shmeetings:{},deals:{},offers:{},dealtasks:{},deallog:{},team:{},projects:{},ptasks:{}};
+const S={round:{name:"Investor round",target:null,currency:"EUR",closeDate:""},investors:{},discussions:{},tasks:{},milestones:{},meetings:{},activity:{},stakeholders:{},shlog:{},shtasks:{},shmeetings:{},deals:{},offers:{},dealtasks:{},deallog:{},team:{},projects:{},ptasks:{},pbudget:{},pactuals:{}};
 const UI={prio:"",tab:"overview",openInv:null,taskFilter:"open",person:"",search:"",sort:(()=>{try{return localStorage.getItem("crm-invsort")||"name"}catch(e){return "name"}})(),ready:false};
 const PRIOS=[["high","High"],["medium","Medium"],["low","Low"]],PRIO_RANK={high:0,medium:1,low:2};
 function prioBadge(p){const x=PRIOS.find(z=>z[0]===p);return x?`<span class="prio ${p}">${x[1]}</span>`:`<span class="meta">–</span>`}
@@ -1414,7 +1418,7 @@ function vProjects(){
     return `<button class="pcardp" data-open-project="${esc(p.id)}"><div class="pc-top"><b>${esc(p.name)}</b>${pStatusPill(p.status||"planned")}</div>
       <div class="meta">${custName(p)?`<span>${esc(custName(p))}</span>`:""}${p.owner?`<span>Lead: ${esc(p.owner)}</span>`:""}</div>
       ${progBar(pr,late>0&&p.status!=="done")}<div class="meta"><span>${pr}% complete</span>${late&&p.status!=="done"?`<span class="due od">${late} late</span>`:""}<span class="sp"></span><span>${s?fmtDate(s):"–"} → ${e?fmtDate(e):"–"}</span></div>
-      ${d?`<div class="meta"><span>Deal: ${esc(d.name)} · ${valTxt(d,true)}</span></div>`:""}</button>`}).join("")}</div>`:`<div class="panel empty">No projects match these filters.</div>`}`;
+      ${d?`<div class="meta"><span>Sales deal: ${esc(d.name)} · ${valTxt(d,true)}</span></div>`:""}${(()=>{const b=budgetSummary(p);return b.hasAny?`<div class="meta"><span ${b.costFc>b.costPlan&&b.costPlan>0?'class="due od"':""}>Budget ${pct(b.costAct,b.costPlan)}% used</span><span>Margin ${fmtMoney(b.marginFc,true)}</span></div>`:""})()}</button>`}).join("")}</div>`:`<div class="panel empty">No projects match these filters.</div>`}`;
 }
 function vProjectDetail(p){
   const items=projOrdered(p.id),pr=projProgress(p),[s,e]=projSpan(p),d=S.deals[p.dealId],cust=S.stakeholders[p.customerId];
@@ -1422,14 +1426,14 @@ function vProjectDetail(p){
   return `<div class="toolbar"><button class="btn sm ghost" data-act="pj-back">← All projects</button><span class="sp"></span><button class="btn sm w" data-act="pj-edit">Edit project</button></div>
   <div class="panel" style="margin-bottom:16px"><div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap"><h1 style="margin:0;font-size:26px;font-weight:800;text-transform:uppercase;color:var(--ink);line-height:1.15;flex:1;min-width:220px">${esc(p.name)}</h1>
     ${RO?pStatusPill(p.status||"planned"):`<select class="stage-sel" data-pstatus="${esc(p.id)}" aria-label="Project status">${PSTATUS.map(([k,l])=>`<option value="${k}" ${(p.status||"planned")===k?"selected":""}>${l}</option>`).join("")}</select>`}</div>
-    <div class="meta" style="margin-top:8px">${cust?`<button class="chip" data-open-sh="${esc(cust.id)}">${esc(cust.name)}</button>`:""}${d?`<button class="chip" data-open-deal="${esc(d.id)}">Deal: ${esc(d.name)}</button>`:""}${p.owner?`<span>Lead: ${esc(p.owner)}</span>`:""}<span>${s?fmtDate(s):"–"} → ${e?fmtDate(e):"–"}</span></div>
+    <div class="meta" style="margin-top:8px">${cust?`<button class="chip" data-open-sh="${esc(cust.id)}">${esc(cust.name)}</button>`:""}${d?`<button class="chip dealchip" data-open-deal="${esc(d.id)}">Sales deal: ${esc(d.name)} ↗</button>`:`<span class="meta" style="margin:0">No sales deal linked</span>`}${p.owner?`<span>Lead: ${esc(p.owner)}</span>`:""}<span>${s?fmtDate(s):"–"} → ${e?fmtDate(e):"–"}</span></div>
     ${p.description?`<div class="summary" style="margin-top:10px">${linkify(p.description)}</div>`:""}
     <dl class="facts"><div><dt>Progress</dt><dd>${pr}%</dd></div>${d?`<div><dt>Contract value</dt><dd>${valTxt(d)}</dd></div>`:""}<div><dt>Items</dt><dd>${items.filter(t=>t.kind==="phase").length} phases · ${items.filter(t=>t.kind==="task").length} tasks · ${items.filter(t=>t.kind==="milestone").length} milestones</dd></div>
       <div><dt>Members</dt><dd>${memberNames(p).map(esc).join(", ")||"–"}</dd></div></dl>${progBar(pr,items.some(itemLate)&&p.status!=="done")}</div>
   <section class="panel"><div class="panel-head"><h2>Schedule</h2><span class="sp"></span>
     <div role="group" aria-label="Time scale" style="display:flex;gap:4px">${[["week","Weeks"],["month","Months"]].map(([k,l])=>`<button class="btn sm ${UI.gScale===k?"primary":""}" data-gscale="${k}">${l}</button>`).join("")}</div>
     <button class="btn sm w" data-act="pj-add-item" data-kind="phase">+ Phase</button><button class="btn sm w" data-act="pj-add-item" data-kind="task">+ Task</button><button class="btn sm w" data-act="pj-add-item" data-kind="milestone">+ Milestone</button></div>
-    ${rows.length?ganttHtml(rows,UI.gScale)+`<p class="meta" style="margin-top:8px">${RO?"":"Drag a bar to move it, drag its right edge to change the end date, or click it to edit. "}Items that depend on a moved item shift with it.</p>`:`<div class="empty">No schedule yet. Start by adding the project's phases, then tasks and milestones inside them.</div>`}</section>`;
+    ${rows.length?ganttHtml(rows,UI.gScale)+`<p class="meta" style="margin-top:8px">${RO?"":"Drag a bar to move it, drag its right edge to change the end date, or click it to edit. "}Items that depend on a moved item shift with it.</p>`:`<div class="empty">No schedule yet. Start by adding the project's phases, then tasks and milestones inside them.</div>`}</section>${budgetSection(p)}`;
 }
 function vGantt(){
   const ps=list("projects").filter(p=>UI.pFilter==="all"||(UI.pFilter==="done"?p.status==="done":p.status!=="done"));
@@ -1487,20 +1491,24 @@ function projectForm(p,fromDeal){
   const vals=p?{...p,members:(p.members||[]).join(", ")}:{name:dd?dd.name:"",customerId:dd?dd.customerId:"",dealId:dd?dd.id:"",owner:dd?dd.owner||"":"",status:"planned",start:today(),end:addDays(today(),90),members:[...new Set([me,...(dd&&dd.owner?splitPeople(dd.owner).map(n=>list("team").find(x=>x.name===n)?.email).filter(Boolean):[])].filter(Boolean))].join(", ")};
   openForm({title:p?"Edit project":dd?`Create project from “${dd.name}”`:"New project",values:vals,saveLabel:p?"Save changes":"Create project",
     fields:[{k:"name",label:"Project name",required:true,ph:"e.g. NJORD corridor pilot – delivery"},
-      {type:"row",fields:[{k:"customerId",label:"Customer",type:"select",options:[["","Internal project"],...customerOptions()]},{k:"dealId",label:"Sales deal",type:"select",options:[["","Not linked to a deal"],...list("deals").slice().sort((a,b)=>String(a.name).localeCompare(String(b.name),"fi")).map(x=>[x.id,`${x.name}${custName(x)?" · "+custName(x):""}`])]}]},
+      {k:"dealId",label:"Linked sales deal",type:"select",hint:"(won deals first; fills in the customer and lets you copy the deal value to the budget)",options:[["","Not linked to a sales deal"],...list("deals").slice().sort((a,b)=>((b.stage==="won")-(a.stage==="won"))||String(a.name).localeCompare(String(b.name),"fi")).map(x=>[x.id,`${x.stage==="won"?"✓ Won · ":dealOpen(x)?"Open · ":"Lost · "}${x.name}${custName(x)?" · "+custName(x):""}`])]},
+      {k:"customerId",label:"Customer",type:"select",options:[["","Internal project"],...customerOptions()]},
       {type:"row",fields:[{k:"status",label:"Status",type:"select",options:PSTATUS},{pick:pickPeople(),k:"owner",label:"Project lead",opts:everyone()}]},
       {type:"row",fields:[{k:"start",label:"Start",type:"date"},{k:"end",label:"Planned end",type:"date"}]},
+      {k:"rate",label:"Default hourly rate",type:"number",hint:"(€/h, used for hour budgets)"},
       {k:"description",label:"Description and goals",type:"textarea",rows:3},
       {pick:pickEmails(),k:"members",label:"Members",type:"textarea",rows:2,hint:"(emails; only members can see this project in the browser version)"}],
     onSave:v=>{
+      if(v.dealId&&!v.customerId&&S.deals[v.dealId])v.customerId=S.deals[v.dealId].customerId||"";v.rate=v.rate==null?"":num(v.rate);
       const mem=parseEmails(v.members);if(me&&!mem.includes(me)&&!(p&&mpAccess().admin))mem.push(me);v.members=mem;
       if(v.end&&v.start&&v.end<v.start)[v.start,v.end]=[v.end,v.start];
       const id=p?p.id:uid(),prevDeal=p?p.dealId:"";
       put("projects",id,{...(p||{createdAt:nowIso()}),id,...v,updatedAt:nowIso()});
       if(prevDeal&&prevDeal!==v.dealId&&S.deals[prevDeal]&&S.deals[prevDeal].projectId===id)put("deals",prevDeal,{...S.deals[prevDeal],projectId:""});
       if(v.dealId&&S.deals[v.dealId]&&S.deals[v.dealId].projectId!==id)put("deals",v.dealId,{...S.deals[v.dealId],projectId:id});
-      if(!p)openProject(id)},
-    onDelete:p?()=>{for(const t of projItems(p.id))del("ptasks",t.id);if(p.dealId&&S.deals[p.dealId]?.projectId===p.id)put("deals",p.dealId,{...S.deals[p.dealId],projectId:""});del("projects",p.id);UI.openProject=null;toast(`Deleted ${p.name}`)}:null});
+      if(!p){openProject(id);if(v.dealId){const pr=S.projects[id];if(pr)budgetFromDeal(pr)}}},
+    onDelete:p?()=>{for(const t of projItems(p.id))del("ptasks",t.id);for(const x of pEntries(p.id))del("pactuals",x.id);for(const x of pLines(p.id))del("pbudget",x.id);if(p.dealId&&S.deals[p.dealId]?.projectId===p.id)put("deals",p.dealId,{...S.deals[p.dealId],projectId:""});del("projects",p.id);UI.openProject=null;toast(`Deleted ${p.name}`)}:null});
+  setTimeout(()=>{const f=document.querySelector("#dlg form");const s=f&&f.elements.dealId;if(!s)return;s.addEventListener("change",()=>{const d=S.deals[s.value];if(!d)return;if(d.customerId&&f.elements.customerId)f.elements.customerId.value=d.customerId;if(f.elements.owner&&!f.elements.owner.value&&d.owner)f.elements.owner.value=d.owner;if(f.elements.name&&!f.elements.name.value)f.elements.name.value=d.name;f.dispatchEvent(new Event("input",{bubbles:true}))})},0);
 }
 function shiftDependents(id,seen=new Set()){if(seen.has(id))return;seen.add(id);const t=S.ptasks[id];if(!t)return;const e=itemEnd(t);
   for(const d of list("ptasks").filter(x=>x.dependsOn===id)){const s=d.start||itemEnd(d);if(e&&s&&s<=e){const dur=daysBetween(s,itemEnd(d)||s),ns=addDays(e,1);put("ptasks",d.id,{...d,start:ns,end:d.kind==="milestone"?ns:addDays(ns,dur)});shiftDependents(d.id,seen)}}}
@@ -1549,6 +1557,90 @@ function dealProjectSection(d){const p=d.projectId&&S.projects[d.projectId];
   return ""}
 function shProjectsSection(s){const ps=list("projects").filter(p=>p.customerId===s.id);if(!ps.length)return "";
   return `<section class="section"><div class="panel-head"><h2>Projects</h2></div><ul class="clean">${ps.map(p=>`<li class="task"><div class="tmain"><button class="linkish" data-open-project="${esc(p.id)}" style="font-weight:700">${esc(p.name)}</button><div class="meta">${pStatusPill(p.status||"planned")}<span>${projProgress(p)}% complete</span></div></div><span class="due">${projSpan(p)[1]?fmtDate(projSpan(p)[1]):""}</span></li>`).join("")}</ul></section>`}
+
+/* ---------- project budget ---------- */
+const BTYPES=[["revenue","Revenue"],["cost","Costs"],["hours","Hours"]];
+const BCATS={revenue:["Project fee","Licence","Recurring service","Change requests","Other revenue"],cost:["Subcontracting","Licences and software","Hardware","Travel","Other costs"],hours:["Development","Project management","Design","Consulting","Testing"]};
+const RSTATUS=[["planned","Planned"],["invoiced","Invoiced"],["paid","Paid"]];
+const pLines=pid=>list("pbudget").filter(x=>x.projectId===pid).sort((a,b)=>num(a.order)-num(b.order)||String(a.category).localeCompare(String(b.category)));
+const pEntries=pid=>list("pactuals").filter(x=>x.projectId===pid).sort((a,b)=>(b.date||"").localeCompare(a.date||"")||(b.createdAt||"").localeCompare(a.createdAt||""));
+function projRate(p){return num(p.rate)||100}
+function lineRate(l,p){return num(l.rate)||projRate(p)}
+function entryEur(e,p){if(e.type==="hours"){const l=S.pbudget[e.lineId];return num(e.hours)*(num(e.rate)||(l?lineRate(l,p):projRate(p)))}return num(e.amount)}
+function lineCalc(l,p){const es=list("pactuals").filter(e=>e.lineId===l.id);
+  if(l.type==="hours"){const ph=num(l.planned),ah=es.reduce((s,e)=>s+num(e.hours),0),r=lineRate(l,p);return {plan:ph*r,act:es.reduce((s,e)=>s+entryEur(e,p),0),ph,ah}}
+  if(l.type==="revenue")return {plan:num(l.planned),act:es.filter(e=>e.status==="invoiced"||e.status==="paid").reduce((s,e)=>s+num(e.amount),0),paid:es.filter(e=>e.status==="paid").reduce((s,e)=>s+num(e.amount),0)};
+  return {plan:num(l.planned),act:es.reduce((s,e)=>s+num(e.amount),0)}}
+function budgetSummary(p){const L=pLines(p.id),E=pEntries(p.id),r={revPlan:0,revInv:0,revPaid:0,costPlan:0,costAct:0,costFc:0,hPlan:0,hAct:0,hEurPlan:0,hEurAct:0,over:[]};
+  for(const l of L){const c=lineCalc(l,p);
+    if(l.type==="revenue"){r.revPlan+=c.plan;r.revInv+=c.act;r.revPaid+=c.paid}
+    else{if(l.type==="hours"){r.hPlan+=c.ph;r.hAct+=c.ah;r.hEurPlan+=c.plan;r.hEurAct+=c.act}r.costPlan+=c.plan;r.costAct+=c.act;r.costFc+=Math.max(c.plan,c.act);if(c.plan>0&&c.act>c.plan)r.over.push(l)}}
+  for(const e of E.filter(e=>!e.lineId||!S.pbudget[e.lineId])){const v=entryEur(e,p);
+    if(e.type==="revenue"){if(e.status==="invoiced"||e.status==="paid")r.revInv+=num(e.amount);if(e.status==="paid")r.revPaid+=num(e.amount)}
+    else{if(e.type==="hours"){r.hAct+=num(e.hours);r.hEurAct+=v}r.costAct+=v;r.costFc+=v}}
+  r.marginPlan=r.revPlan-r.costPlan;r.marginFc=r.revPlan-r.costFc;r.marginAct=r.revInv-r.costAct;r.hasAny=L.length+E.length>0;return r}
+function pct(a,b){return b>0?Math.round(a/b*100):0}
+function budgetSection(p){
+  const L=pLines(p.id),E=pEntries(p.id),b=budgetSummary(p);
+  const stat=(label,main,sub,used,warn)=>`<div class="stat ${warn?"alert":""}"><span>${label}</span><b>${main}</b><span>${sub}</span>${used!=null?progBar(Math.min(100,used),warn):""}</div>`;
+  const lineRow=l=>{const c=lineCalc(l,p),rem=c.plan-c.act,over=l.type!=="revenue"&&c.plan>0&&c.act>c.plan;
+    return `<tr><td><button class="linkish" data-act="pb-edit-line" data-id="${esc(l.id)}" style="font-weight:600">${esc(l.category||"Line")}</button>${l.notes?`<div class="meta">${esc(l.notes)}</div>`:""}</td>
+    <td class="num">${l.type==="hours"?`${num(l.planned)} h<div class="meta" style="justify-content:flex-end">${fmtMoney(c.plan)} @ ${fmtMoney(lineRate(l,p))}/h</div>`:fmtMoney(c.plan)}</td>
+    <td class="num">${l.type==="hours"?`${c.ah} h<div class="meta" style="justify-content:flex-end">${fmtMoney(c.act)}</div>`:fmtMoney(c.act)}${l.type==="revenue"&&c.paid?`<div class="meta" style="justify-content:flex-end">${fmtMoney(c.paid)} paid</div>`:""}</td>
+    <td class="num ${over?"due od":""}">${l.type==="hours"?`${num(l.planned)-c.ah} h`:fmtMoney(rem)}</td>
+    <td style="min-width:110px">${progBar(Math.min(100,pct(c.act,c.plan)),over)}<div class="meta">${pct(c.act,c.plan)}%${over?" · over budget":""}</div></td></tr>`};
+  const groups=BTYPES.map(([t,lbl])=>{const ls=L.filter(l=>l.type===t);if(!ls.length)return "";return `<tr class="bgroup"><td colspan="5">${lbl}</td></tr>${ls.map(lineRow).join("")}`}).join("");
+  const fl=fapply("pa-"+p.id,E,{text:e=>[e.description,e.person,e.ref,S.pbudget[e.lineId]?.category].join(" "),kind:e=>e.type,date:e=>e.date,mode:"past"});
+  const eRow=e=>{const l=S.pbudget[e.lineId];return `<li class="task"><div class="tmain"><button class="linkish" data-act="pb-edit-entry" data-id="${esc(e.id)}">${esc(e.description||l?.category||"Entry")}</button>
+    <div class="meta"><span class="kind">${esc((BTYPES.find(x=>x[0]===e.type)||[,""])[1])}</span>${l?`<span>${esc(l.category)}</span>`:""}${e.person?`<span>${esc(e.person)}</span>`:""}${e.ref?`<span>#${esc(e.ref)}</span>`:""}${e.type==="revenue"?`<span class="ostat ${e.status==="paid"?"accepted":e.status==="invoiced"?"sent":""}">${esc((RSTATUS.find(x=>x[0]===e.status)||[,"Planned"])[1])}</span>`:""}</div></div>
+    <span class="due" style="text-align:right">${e.type==="hours"?`${num(e.hours)} h · `:""}${fmtMoney(entryEur(e,p))}<br>${fmtDate(e.date)}</span></li>`};
+  return `<section class="panel" style="margin-top:16px"><div class="panel-head"><h2>Budget</h2><span class="sp"></span>
+    <button class="btn sm w" data-act="pb-add-line">+ Budget line</button><button class="btn sm w" data-act="pb-add-entry" data-type="hours">+ Hours</button><button class="btn sm w" data-act="pb-add-entry" data-type="cost">+ Cost</button><button class="btn sm w" data-act="pb-add-entry" data-type="revenue">+ Invoice</button>${b.hasAny?`<button class="btn sm ghost" data-act="pb-export">Export CSV</button>`:""}</div>
+  ${b.hasAny?`<div class="stats" style="margin-bottom:14px">
+    ${stat("Revenue",fmtMoney(b.revInv,true),`invoiced of ${fmtMoney(b.revPlan,true)} planned${b.revPaid?`, ${fmtMoney(b.revPaid,true)} paid`:""}`,pct(b.revInv,b.revPlan))}
+    ${stat("Costs incl. hours",fmtMoney(b.costAct,true),`of ${fmtMoney(b.costPlan,true)} budget · forecast ${fmtMoney(b.costFc,true)}`,pct(b.costAct,b.costPlan),b.costFc>b.costPlan&&b.costPlan>0)}
+    ${stat("Hours",`${b.hAct} h`,`of ${b.hPlan} h planned · ${fmtMoney(b.hEurAct,true)}`,pct(b.hAct,b.hPlan),b.hPlan>0&&b.hAct>b.hPlan)}
+    ${stat("Margin",fmtMoney(b.marginFc,true),`forecast · planned ${fmtMoney(b.marginPlan,true)}${b.revPlan?` (${pct(b.marginPlan,b.revPlan)}%)`:""}`,null,b.marginFc<0)}</div>
+    ${b.over.length?`<div class="notice" style="margin:0 0 12px">Over budget: ${b.over.map(l=>esc(l.category)).join(", ")}</div>`:""}
+    ${L.length?`<div class="tbl-wrap" style="margin-bottom:14px"><table class="btable"><thead><tr><th>Budget line</th><th class="num">Planned</th><th class="num">Actual</th><th class="num">Remaining</th><th>Used</th></tr></thead><tbody>${groups}</tbody></table></div>`:`<div class="empty">No budget lines yet. Add planned revenue, costs and hours with “+ Budget line”.</div>`}
+    <h3 style="font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:6px 0 8px">Actuals</h3>
+    ${E.length?fbar("pa-"+p.id,{ph:"Search actuals",kinds:BTYPES,mode:"past"})+fcount("pa-"+p.id,fl.length,E.length)+(fl.length?`<ul class="clean">${flimit("pa-"+p.id,fl,8).map(eRow).join("")}</ul>${fmore("pa-"+p.id,fl.length,8)}`:`<div class="empty">No actuals match these filters.</div>`):`<div class="empty">No actuals yet. Log hours, costs and invoices as the project progresses.</div>`}`
+  :`<div class="empty">Plan the project's revenue, costs and hours, then log actuals to follow budget use, forecast and margin.${p.dealId?" Revenue lines can be created from the linked sales deal.":""}</div>${p.dealId&&!RO?`<button class="btn sm primary" data-act="pb-from-deal" style="margin-top:8px">Create revenue lines from the deal</button>`:""}`}</section>`;
+}
+function budgetLineForm(l,pid,type){const p=S.projects[l?l.projectId:pid];if(!p)return;const t=l?l.type:type||"cost";
+  openForm({title:l?`Edit ${t==="hours"?"hour":t} budget line`:`Add budget line`,values:l||{type:t,rate:t==="hours"?projRate(p):"",category:""},saveLabel:l?"Save changes":"Add line",
+    fields:[...(l?[]:[{k:"type",label:"Type",type:"select",options:[["revenue","Revenue (planned income)"],["cost","Cost (planned spend)"],["hours","Hours (planned work)"]]}]),
+      {k:"category",label:"Budget line",required:true,ph:"e.g. Subcontracting, Development, Project fee",opts:[...BCATS.revenue,...BCATS.cost,...BCATS.hours]},
+      {type:"row",fields:[{k:"planned",label:t==="hours"&&l?"Planned hours":"Planned amount",type:"number",hint:l?(t==="hours"?"(h)":"(€)"):"(€, or hours for an hour line)"},{k:"rate",label:"Hourly rate",type:"number",hint:"(€/h, hour lines only)"}]},
+      {k:"notes",label:"Notes",type:"textarea",rows:2}],
+    onSave:v=>{const id=l?l.id:uid();put("pbudget",id,{...(l||{projectId:p.id,order:pLines(p.id).length+1,createdAt:nowIso()}),id,...v,type:l?l.type:v.type,planned:num(v.planned),rate:v.rate==null?"":num(v.rate),updatedAt:nowIso()})},
+    onDelete:l?()=>{for(const e of list("pactuals").filter(e=>e.lineId===l.id))put("pactuals",e.id,{...e,lineId:""});del("pbudget",l.id)}:null})}
+function entryForm(e,pid,type){const p=S.projects[e?e.projectId:pid];if(!p)return;const t=e?e.type:type||"cost";
+  const lines=pLines(p.id).filter(l=>l.type===t);
+  openForm({title:e?"Edit entry":t==="hours"?"Log hours":t==="revenue"?"Add invoice":"Add cost",values:e||{type:t,date:today(),lineId:lines[0]?.id||"",status:"invoiced",person:t==="hours"?(teamByEmail(myEmail())?.name||""):""},saveLabel:e?"Save changes":"Save",
+    fields:[{type:"row",fields:[{k:"date",label:"Date",type:"date",required:true},{k:"lineId",label:"Budget line",type:"select",options:[["","No budget line"],...lines.map(l=>[l.id,l.category])]}]},
+      ...(t==="hours"?[{type:"row",fields:[{k:"hours",label:"Hours",type:"number",required:true},{k:"rate",label:"Hourly rate",type:"number",hint:"(€/h, empty = line rate)"}]},{pick:pickPeople(),k:"person",label:"Who",opts:everyone()}]
+        :[{type:"row",fields:[{k:"amount",label:t==="revenue"?"Invoice amount":"Amount",type:"number",required:true,hint:"(€, excl. VAT)"},{k:"ref",label:t==="revenue"?"Invoice number":"Invoice or receipt no."}]},
+          ...(t==="revenue"?[{k:"status",label:"Status",type:"select",options:RSTATUS}]:[{k:"person",label:"Supplier"}])]),
+      {k:"description",label:"Description",ph:t==="hours"?"What was done":"What it was for"}],
+    onSave:v=>{const id=e?e.id:uid();put("pactuals",id,{...(e||{projectId:p.id,createdAt:nowIso()}),id,...v,type:t,hours:num(v.hours),amount:num(v.amount),rate:v.rate==null||v.rate===""?"":num(v.rate),updatedAt:nowIso()})},
+    onDelete:e?()=>del("pactuals",e.id):null})}
+function budgetFromDeal(p){const d=S.deals[p.dealId];if(!d)return;let n=pLines(p.id).length;
+  if(num(d.oneOff)){const id=uid();put("pbudget",id,{id,projectId:p.id,type:"revenue",category:"Project fee",planned:num(d.oneOff),order:++n,notes:`From deal ${d.name}`,createdAt:nowIso()})}
+  if(num(d.recurring)){const id=uid();put("pbudget",id,{id,projectId:p.id,type:"revenue",category:"Recurring service, year 1",planned:num(d.recurring),order:++n,notes:`From deal ${d.name}`,createdAt:nowIso()})}
+  toast(num(d.oneOff)||num(d.recurring)?"Revenue lines created from the deal":"The deal has no value to copy")}
+function budgetCsv(p){const q=v=>{v=String(v??"");return /[",;\n]/.test(v)?`"${v.replace(/"/g,'""')}"`:v};
+  const rows=[["Project","Record","Type","Budget line","Date","Description","Person or supplier","Hours","Rate","Amount EUR","Status","Reference"]];
+  for(const l of pLines(p.id)){const c=lineCalc(l,p);rows.push([p.name,"Budget",l.type,l.category,"",l.notes||"","",l.type==="hours"?num(l.planned):"",l.type==="hours"?lineRate(l,p):"",c.plan,"planned",""])}
+  for(const e of pEntries(p.id).slice().reverse()){const l=S.pbudget[e.lineId];rows.push([p.name,"Actual",e.type,l?.category||"",e.date,e.description||"",e.person||"",e.type==="hours"?num(e.hours):"",e.type==="hours"?(num(e.rate)||(l?lineRate(l,p):projRate(p))):"",entryEur(e,p),e.type==="revenue"?e.status:"",e.ref||""])}
+  return rows.map(r=>r.map(q).join(";")).join("\r\n")}
+async function budgetExport(p){const csv="\ufeff"+budgetCsv(p),fname=`${slug(p.name)}-budget-${today()}.csv`;
+  if(DL){try{await DL.save({filename:fname,data:csv});toast("Budget exported")}catch(err){if(err&&err.code!=="declined")toast("The file couldn't be saved here.")}}
+  else{try{const b=new Blob([csv],{type:"text/csv"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=fname;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000)}catch(err){toast("The file couldn't be saved here.")}}}
+function pbAction(a,el){const p=S.projects[UI.openProject];if(!p)return;
+  switch(a){case "pb-add-line":budgetLineForm(null,p.id,"cost");break;case "pb-edit-line":if(S.pbudget[el.dataset.id])budgetLineForm(S.pbudget[el.dataset.id]);break;
+    case "pb-add-entry":entryForm(null,p.id,el.dataset.type);break;case "pb-edit-entry":if(S.pactuals[el.dataset.id])entryForm(S.pactuals[el.dataset.id]);break;
+    case "pb-from-deal":budgetFromDeal(p);break;case "pb-export":budgetExport(p);break}}
 
 /* ---------- google calendar ---------- */
 let MCP=null,VIEWER_ID="";const CAL="Google Calendar";
@@ -1726,6 +1818,7 @@ document.addEventListener("click",e=>{
   if(a&&a.startsWith("sh-")){shAction(a,el);return}
   if(a&&a.startsWith("dl-")){dlAction(a,el);return}
   if(a&&a.startsWith("pj-")){pjAction(a,el);return}
+  if(a&&a.startsWith("pb-")){pbAction(a,el);return}
   switch(a){
     case "close-drawer":closeDrawer();break;
     case "add-investor":if(!RO)investorForm();break;

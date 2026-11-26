@@ -65,14 +65,14 @@ language sql stable security definer
 set search_path = public
 as $$
   select case
-    when coll in ('projects','ptasks') then exists (
+    when coll in ('projects','ptasks','pbudget','pactuals') then exists (
       select 1 from public.mp_members m
       where lower(m.email) = lower(coalesce(auth.jwt() ->> 'email', ''))
         and m.can_projects
         and (
           m.is_admin
           or (coll = 'projects' and coalesce(doc -> 'members', '[]'::jsonb) ? lower(m.email))
-          or (coll = 'ptasks' and exists (
+          or (coll <> 'projects' and exists (
                 select 1 from public.mp_docs p
                 where p.collection = 'projects' and p.id = doc ->> 'projectId'
                   and coalesce(p.data -> 'members', '[]'::jsonb) ? lower(m.email)))
@@ -98,3 +98,29 @@ create policy "doc delete" on public.mp_docs for delete to authenticated using (
 -- Esimerkkejä:
 --   Ylläpitäjä (näkee kaikki projektit):  update public.mp_members set is_admin = true where email = 'kirsi.ylarinne@ioxio.com';
 --   Ei pääsyä Projects-osioon:            update public.mp_members set can_projects = false where email = 'kollega@ioxio.com';
+
+-- ===================================================================
+-- 6) Projektibudjetti (pbudget = budjettirivit, pactuals = toteumat) noudattaa
+--    samaa projektikohtaista rajausta kuin aikataulu (lisätty kohdan 5 funktioon).
+--    Rajapintanäkymät muille järjestelmille (Supabase REST: /rest/v1/mp_api_projects jne.).
+--    security_invoker = käyttöoikeudet ovat samat kuin sovelluksessa.
+create or replace view public.mp_api_projects with (security_invoker = true) as
+  select id, data->>'name' as name, data->>'status' as status,
+         nullif(data->>'customerId','') as customer_id, nullif(data->>'dealId','') as deal_id,
+         data->>'owner' as project_lead, nullif(data->>'start','')::date as start_date,
+         nullif(data->>'end','')::date as planned_end, nullif(data->>'rate','')::numeric as hourly_rate, updated_at
+  from public.mp_docs where collection = 'projects';
+create or replace view public.mp_api_budget_lines with (security_invoker = true) as
+  select id, data->>'projectId' as project_id, data->>'type' as type, data->>'category' as budget_line,
+         nullif(data->>'planned','')::numeric as planned, nullif(data->>'rate','')::numeric as hourly_rate,
+         data->>'notes' as notes, updated_at
+  from public.mp_docs where collection = 'pbudget';
+create or replace view public.mp_api_budget_actuals with (security_invoker = true) as
+  select id, data->>'projectId' as project_id, nullif(data->>'lineId','') as budget_line_id, data->>'type' as type,
+         nullif(data->>'date','')::date as date, nullif(data->>'hours','')::numeric as hours,
+         nullif(data->>'rate','')::numeric as hourly_rate, nullif(data->>'amount','')::numeric as amount,
+         nullif(data->>'status','') as status, nullif(data->>'ref','') as reference,
+         data->>'person' as person_or_supplier, data->>'description' as description, updated_at
+  from public.mp_docs where collection = 'pactuals';
+revoke all on public.mp_api_projects, public.mp_api_budget_lines, public.mp_api_budget_actuals from anon;
+grant select on public.mp_api_projects, public.mp_api_budget_lines, public.mp_api_budget_actuals to authenticated;
