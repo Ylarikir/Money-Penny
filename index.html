@@ -1523,7 +1523,7 @@ function ptaskForm(t,projectId,kind){
   const k=vals.kind;
   openForm({title:t?`Edit ${k}`:`Add ${k} to ${p.name}`,values:vals,saveLabel:t?"Save changes":`Add ${k}`,
     fields:[{k:"title",label:k==="milestone"?"Milestone":k==="phase"?"Phase name":"Task",required:true,ph:k==="phase"?"e.g. Design, Build, Pilot, Handover":k==="milestone"?"e.g. Pilot go-live":"e.g. Data model workshop"},
-      {type:"row",fields:[{k:"kind",label:"Type",type:"select",options:PKINDS},{k:"parentId",label:"Phase",type:"select",options:[["","No phase"],...its.filter(x=>x.kind==="phase"&&(!t||x.id!==t.id)).map(x=>[x.id,x.title])]}]},
+      {type:"row",fields:[{k:"kind",label:"Type",type:"select",options:PKINDS},{k:"parentId",label:"Belongs to phase",type:"select",options:[["","No phase (top level)"],...its.filter(x=>x.kind==="phase"&&(!t||x.id!==t.id)).map(x=>[x.id,x.title])]}]},
       {type:"row",fields:[{k:"start",label:k==="milestone"?"Date":"Start",type:"date",required:true},{k:"end",label:"End",type:"date",hint:k==="milestone"?"(not used for milestones)":""}]},
       {type:"row",fields:[{pick:pickPeople(),k:"owner",label:"Responsible person",opts:everyone()},{k:"progress",label:"Progress",type:"number",hint:"(%)"}]},
       {k:"dependsOn",label:"Starts after",type:"select",options:[["","No dependency"],...its.filter(x=>!t||x.id!==t.id).map(x=>[x.id,`${x.kind==="phase"?"Phase: ":x.kind==="milestone"?"◆ ":""}${x.title}`])]},
@@ -1532,6 +1532,7 @@ function ptaskForm(t,projectId,kind){
       if(v.dependsOn&&S.ptasks[v.dependsOn]){const de=itemEnd(S.ptasks[v.dependsOn]);if(de&&v.start<=de){const dur=daysBetween(v.start,v.end);v.start=addDays(de,1);v.end=v.kind==="milestone"?v.start:addDays(v.start,dur);toast(`Start moved to ${fmtDate(v.start)} to follow “${S.ptasks[v.dependsOn].title}”`)}}
       if(t)savePtask(t,v);else{const id=uid();savePtask({id,projectId:pid,order:its.length+1,createdAt:nowIso()},v)}},
     onDelete:t?()=>{for(const x of projItems(pid))if(x.dependsOn===t.id||x.parentId===t.id)put("ptasks",x.id,{...x,dependsOn:x.dependsOn===t.id?"":x.dependsOn,parentId:x.parentId===t.id?"":x.parentId});del("ptasks",t.id)}:null});
+  setTimeout(()=>{const f=document.querySelector("#dlg form");if(!f||!f.elements.kind)return;const sync=()=>{const kd=f.elements.kind.value,pl=f.elements.parentId&&f.elements.parentId.closest("label"),el=f.elements.end&&f.elements.end.closest("label");if(pl)pl.style.visibility=kd==="phase"?"hidden":"";if(el)el.style.visibility=kd==="milestone"?"hidden":"";const sl=f.elements.start&&f.elements.start.closest("label");if(sl&&sl.firstChild)sl.firstChild.textContent=kd==="milestone"?"Date":"Start"};f.elements.kind.addEventListener("change",sync);sync()},0);
 }
 function pjAction(a,el){const p=S.projects[UI.openProject];
   switch(a){case "pj-add":projectForm();break;case "pj-from-deal":projectForm(null,el.dataset.deal||UI.openDeal);break;case "pj-unlink":{const d=S.deals[el.dataset.deal];if(d)unlinkDeal(d);break}case "pj-edit":if(p)projectForm(p);break;
