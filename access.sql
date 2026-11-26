@@ -9,6 +9,7 @@ alter table public.mp_members add column if not exists can_sales    boolean not 
 -- 2) Saako kirjautunut käyttäjä käsitellä tätä tietotyyppiä?
 --    Investor-osio: sijoittajat, kierros, sijoittajatehtävät, palaverit, aikajana ja historia.
 --    Sales-osio: sidosryhmät, niiden palaverit ja seurannat, kaupat, tarjoukset ja myynnin seurannat.
+--    Tiimilista (team) näkyy kaikille, joilla on oikeus jompaankumpaan osioon.
 --    Tuntemattomat tietotyypit vaativat molemmat oikeudet.
 create or replace function public.mp_can(coll text)
 returns boolean
@@ -21,6 +22,7 @@ as $$
       and case
         when coll in ('investors','discussions','tasks','milestones','meetings','activity','round') then m.can_investor
         when coll in ('stakeholders','shlog','shtasks','shmeetings','deals','offers','dealtasks','deallog') then m.can_sales
+        when coll = 'team' then (m.can_investor or m.can_sales)
         else m.can_investor and m.can_sales
       end
   );

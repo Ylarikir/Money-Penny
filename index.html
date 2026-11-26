@@ -175,6 +175,11 @@ ul.clean{list-style:none;margin:0;padding:0}
 .fsel,.fdate{padding:6px 10px;border:1px solid var(--line);border-radius:999px;background:var(--bg);color:var(--ink);font-size:12.5px;max-width:190px}
 .fq:focus,.fsel:focus,.fdate:focus{border-color:var(--teal);outline:none}
 .fcount{margin:0 0 6px}
+.pick{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;text-transform:none;letter-spacing:0}
+.pickbtn{border:1px solid var(--teal);background:transparent;color:var(--ink);border-radius:999px;padding:3px 11px;font-size:12.5px;font-weight:600;cursor:pointer}
+.pickbtn:hover{background:var(--accent-soft)}
+.pickbtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.pickbtn[aria-pressed="true"]::before{content:"✓ "}
 .secswitch{display:inline-flex;gap:4px;padding:4px;margin-top:20px;border:1px solid var(--line);border-radius:999px;background:var(--surface)}
 .secbtn{border:0;background:transparent;color:var(--soft);font-weight:800;font-size:14px;letter-spacing:.1em;text-transform:uppercase;padding:9px 26px;border-radius:999px;cursor:pointer}
 .secbtn:hover{color:var(--ink)}
@@ -310,6 +315,7 @@ dialog::backdrop{background:rgba(5,10,14,.65)}
       <button class="btn sm inv-only" data-act="export">Export report</button>
       <button class="btn sm w inv-only" data-act="edit-round">Round settings</button>
       <button class="btn sm w inv-only" data-act="add-meeting">Schedule meeting</button>
+      <button class="btn sm" data-act="team">Team</button>
       <button class="btn sm primary w" data-act="add-any">+ Add new</button>
     </div>
     <div id="secswitch"></div>
@@ -333,11 +339,11 @@ const TYPES=["VC","Angel","Corporate","Family office","Public funding","Other"];
 const KINDS=["Meeting","Call","Email","Event","Other"];
 const MKINDS=["Meeting","Call","Event","Other"];
 const DEFAULT_CHECKLIST="- Check the latest deck version\n- Update the financial model and key numbers\n- Check data room access for the attendees\n- Read up on the investor and the people attending\n- Agree who presents what, and the ask";
-const COLS=["investors","discussions","tasks","milestones","meetings","activity","stakeholders","shlog","shtasks","shmeetings","deals","offers","dealtasks","deallog"];
+const COLS=["investors","discussions","tasks","milestones","meetings","activity","stakeholders","shlog","shtasks","shmeetings","deals","offers","dealtasks","deallog","team"];
 const LS_KEY="investor-round-crm-v1";
 
 /* ---------- state ---------- */
-const S={round:{name:"Investor round",target:null,currency:"EUR",closeDate:""},investors:{},discussions:{},tasks:{},milestones:{},meetings:{},activity:{},stakeholders:{},shlog:{},shtasks:{},shmeetings:{},deals:{},offers:{},dealtasks:{},deallog:{}};
+const S={round:{name:"Investor round",target:null,currency:"EUR",closeDate:""},investors:{},discussions:{},tasks:{},milestones:{},meetings:{},activity:{},stakeholders:{},shlog:{},shtasks:{},shmeetings:{},deals:{},offers:{},dealtasks:{},deallog:{},team:{}};
 const UI={prio:"",tab:"overview",openInv:null,taskFilter:"open",person:"",search:"",sort:(()=>{try{return localStorage.getItem("crm-invsort")||"name"}catch(e){return "name"}})(),ready:false};
 const PRIOS=[["high","High"],["medium","Medium"],["low","Low"]],PRIO_RANK={high:0,medium:1,low:2};
 function prioBadge(p){const x=PRIOS.find(z=>z[0]===p);return x?`<span class="prio ${p}">${x[1]}</span>`:`<span class="meta">–</span>`}
@@ -670,11 +676,11 @@ function fieldHtml(f,val){
   const v=val??f.def??"";
   const lab=`${esc(f.label)}${f.hint?` <span class="hint">${esc(f.hint)}</span>`:""}`;
   if(f.type==="row")return `<div class="row2">${f.fields.map(x=>fieldHtml(x,f._vals?.[x.k])).join("")}</div>`;
-  if(f.type==="textarea")return `<label>${lab}<textarea name="${f.k}" rows="${f.rows||4}" placeholder="${esc(f.ph||"")}">${esc(v)}</textarea></label>`;
+  if(f.type==="textarea")return `<label>${lab}<textarea name="${f.k}" rows="${f.rows||4}" placeholder="${esc(f.ph||"")}">${esc(v)}</textarea>${pickRow(f.k,f.pick)}</label>`;
   if(f.type==="time24"){const [hh,mm]=String(v||"").split(":");const mins=["00","05","10","15","20","25","30","35","40","45","50","55"];if(mm&&!mins.includes(mm)){mins.push(mm);mins.sort()}
     return `<label>${lab}<span class="t24"><select data-t24h="${f.k}" aria-label="Hour (00–23)"><option value="">--</option>${Array.from({length:24},(_,i)=>String(i).padStart(2,"0")).map(h=>`<option value="${h}" ${h===hh?"selected":""}>${h}</option>`).join("")}</select><b>:</b><select data-t24m="${f.k}" aria-label="Minutes">${mins.map(x=>`<option value="${x}" ${x===(mm||"00")?"selected":""}>${x}</option>`).join("")}</select><input type="hidden" name="${f.k}" value="${esc(v)}"></span></label>`}
   if(f.type==="select")return `<label>${lab}<select name="${f.k}">${f.options.map(o=>{const [ov,ol]=Array.isArray(o)?o:[o,o];return `<option value="${esc(ov)}" ${String(ov)===String(v)?"selected":""}>${esc(ol)}</option>`}).join("")}</select></label>`;
-  return `<label>${lab}<input name="${f.k}" type="${f.type||"text"}" value="${esc(v)}" placeholder="${esc(f.ph||"")}" ${f.opts?`list="dl-${f.k}" autocomplete="off"`:""} ${f.type==="number"?'inputmode="decimal" min="0" step="any"':""}>${f.opts?`<datalist id="dl-${f.k}">${f.opts.map(o=>`<option value="${esc(o)}">`).join("")}</datalist>`:""}<span class="err" hidden></span></label>`;
+  return `<label>${lab}<input name="${f.k}" type="${f.type||"text"}" value="${esc(v)}" placeholder="${esc(f.ph||"")}" ${f.opts?`list="dl-${f.k}" autocomplete="off"`:""} ${f.type==="number"?'inputmode="decimal" min="0" step="any"':""}>${f.opts?`<datalist id="dl-${f.k}">${f.opts.map(o=>`<option value="${esc(o)}">`).join("")}</datalist>`:""}<span class="err" hidden></span>${pickRow(f.k,f.pick)}</label>`;
 }
 function flat(fields){return fields.flatMap(f=>f.type==="row"?f.fields:[f])}
 function openForm({title,fields,values={},onSave,onDelete,saveLabel="Save"}){
@@ -684,6 +690,8 @@ function openForm({title,fields,values={},onSave,onDelete,saveLabel="Save"}){
     <div class="form-actions">${onDelete?`<button type="button" class="btn danger" data-del>Delete</button>`:""}<span class="sp"></span>
     <button type="button" class="btn ghost" data-cancel>Cancel</button><button class="btn primary" type="submit">${esc(saveLabel)}</button></div></form>`;
   const form=dlg.querySelector("form");
+  form.addEventListener("click",ev=>{const b=ev.target.closest&&ev.target.closest("[data-pick]");if(!b)return;ev.preventDefault();const el=form.elements[b.dataset.pick];if(!el)return;const sep=b.dataset.sep,v=b.dataset.val;const parts=pickParts(el.value,sep);const i=parts.findIndex(p=>p.toLowerCase()===v.toLowerCase());if(i>=0)parts.splice(i,1);else parts.push(v);el.value=parts.join(sep);el.dispatchEvent(new Event("input",{bubbles:true}));syncPicks(form)});
+  form.addEventListener("input",()=>syncPicks(form));setTimeout(()=>syncPicks(form),0);
   form.addEventListener("change",ev=>{const t=ev.target,k=t.dataset&&(t.dataset.t24h||t.dataset.t24m);if(!k)return;const h=form.querySelector(`[data-t24h="${k}"]`).value,m=form.querySelector(`[data-t24m="${k}"]`).value;form.elements[k].value=h?`${h}:${m}`:""});
   form.querySelector("[data-cancel]").onclick=()=>dlg.close();
   const delBtn=form.querySelector("[data-del]");
@@ -707,7 +715,7 @@ function investorForm(i){
     fields:[{k:"name",label:"Investor or firm name",required:true,ph:"e.g. Nordic Ventures"},
       {type:"row",fields:[{k:"type",label:"Type",type:"select",options:TYPES},{k:"stage",label:"Stage",type:"select",options:STAGES}]},
       {k:"priority",label:"Priority",type:"select",options:[["","Not set"],...PRIOS]},
-      {type:"row",fields:[{k:"ticket",label:"Expected ticket",type:"number",ph:"e.g. 500000",hint:`(${S.round.currency||"EUR"})`},{k:"owner",label:"Our lead",ph:"Who owns this relationship",opts:allPeople()}]},
+      {type:"row",fields:[{k:"ticket",label:"Expected ticket",type:"number",ph:"e.g. 500000",hint:`(${S.round.currency||"EUR"})`},{pick:pickPeople(),k:"owner",label:"Our lead",ph:"Who owns this relationship",opts:allPeople()}]},
       {k:"website",label:"Website",ph:"nordicventures.com"},
       {k:"summary",label:"Key notes",type:"textarea",rows:5,ph:"Investment focus, what they care about, concerns raised, anything the team must remember"}],
     onSave:v=>{if(i){const changed=i.stage!==v.stage;put("investors",i.id,{...i,...v,updatedAt:nowIso()});if(changed)logAct(`Moved to ${stageLabel(v.stage)}`,i.id,"stage");}
@@ -728,7 +736,7 @@ function taskForm(t,invId){
   openForm({title:t?"Edit task":"Add task",values:t||{investorId:invId||"",due:addDays(today(),3),owner:(S.investors[invId]?.owner)||(UI.tab==="tasks"&&UI.person&&UI.person!=="__none"?UI.person:"")},saveLabel:t?"Save changes":"Add task",
     fields:[{k:"title",label:"What needs to happen",required:true,ph:"e.g. Send updated financial model"},
       {k:"investorId",label:"Investor",type:"select",options:invOptions(true)},
-      {type:"row",fields:[{k:"due",label:"Due date",type:"date"},{k:"owner",label:"Responsible person",ph:"Who does it, e.g. Kirsi or Tuija & Kirsi",opts:allPeople()}]},
+      {type:"row",fields:[{k:"due",label:"Due date",type:"date"},{pick:pickPeople(),k:"owner",label:"Responsible person",ph:"Who does it, e.g. Kirsi or Tuija & Kirsi",opts:allPeople()}]},
       {k:"notes",label:"Details",type:"textarea",rows:3},
       ...(t?[{k:"status",label:"Status",type:"select",options:[["open","Pending"],["done","Done"]]}]:[])],
     onSave:v=>{if(t){const nowDone=v.status==="done"&&t.status!=="done";put("tasks",t.id,{...t,...v,doneAt:v.status==="done"?(t.doneAt||nowIso()):""});if(nowDone)logAct(`Done: ${v.title}`,v.investorId,"task")}
@@ -742,7 +750,7 @@ function discForm(d,invId,mtg){
     fields:[{k:"investorId",label:"Investor",type:"select",options:invOptions(false)},
       {type:"row",fields:[{k:"date",label:"Date",type:"date",required:true},{k:"kind",label:"Type",type:"select",options:KINDS}]},
       {k:"title",label:"Topic",required:true,ph:"e.g. Intro call, partner meeting, DD questions"},
-      {k:"attendees",label:"Who was there",ph:inv&&inv.contacts&&inv.contacts.length?inv.contacts.map(c=>c.name).join(", "):"Names"},
+      {pick:pickAttend(),k:"attendees",label:"Who was there",ph:inv&&inv.contacts&&inv.contacts.length?inv.contacts.map(c=>c.name).join(", "):"Names"},
       {k:"notes",label:"Key points",type:"textarea",rows:5,ph:"What they said, questions, concerns, signals of interest"},
       {k:"nextSteps",label:"Agreed next steps",type:"textarea",rows:3,ph:"What was promised and by whom"},
       ...(!d?[{k:"mkTask",label:"Create a follow-up task from next steps",type:"select",options:[["yes","Yes, due in 3 days"],["no","No"]]}]:[])],
@@ -800,11 +808,11 @@ function meetingForm(m,invId){
       {type:"row",fields:[{k:"date",label:"Date",type:"date",required:true},{k:"time",label:"Time",type:"time24"}]},
       {type:"row",fields:[{k:"kind",label:"Type",type:"select",options:MKINDS},{k:"prepDays",label:"Prep task",type:"number",hint:"(days before)"}]},
       {k:"title",label:"Topic",required:true,ph:"e.g. First pitch, partner meeting, DD session"},
-      {k:"attendees",label:"Who will be there",ph:inv&&inv.contacts&&inv.contacts.length?inv.contacts.map(c=>c.name).join(", "):"Names"},
+      {pick:pickAttend(),k:"attendees",label:"Who will be there",ph:inv&&inv.contacts&&inv.contacts.length?inv.contacts.map(c=>c.name).join(", "):"Names"},
       {k:"notes",label:"Agenda and goals",type:"textarea",rows:3,ph:"What we want out of this meeting"},
       {type:"row",fields:[{k:"duration",label:"Length",type:"select",options:[["30","30 min"],["45","45 min"],["60","1 hour"],["90","1 h 30 min"],["120","2 hours"]]},{k:"location",label:"Location",ph:"Address or video link"}]},
       ...(MCP&&!(m&&m.calEventId)?[{k:"invite",label:"Calendar invitation",type:"select",options:[["yes","Create Google Calendar event and send invitations"],["meet","Same, and add a Google Meet link"],["no","No calendar event"]]}]:!MCP&&!(m&&m.calEventId)?[{k:"invite",label:"Google Calendar",type:"select",options:[["link","Open a pre-filled event in Google Calendar after saving"],["no","No calendar event"]]}]:[]),
-      {k:"guests",label:"Invitation guests",type:"textarea",rows:2,ph:"partner@fund.com, colleague@ioxio.com",hint:"(emails separated by commas; the investor's contacts are filled in)"},
+      {pick:pickEmails(),k:"guests",label:"Invitation guests",type:"textarea",rows:2,ph:"partner@fund.com, colleague@ioxio.com",hint:"(emails separated by commas; the investor's contacts are filled in)"},
       ...(m?[{k:"status",label:"Status",type:"select",options:[["planned","Planned"],["held","Held"],["cancelled","Cancelled"]]}]:[])],
     onSave:v=>saveMeeting(m,v),
     onDelete:m?()=>{const t=S.tasks[m.prepTaskId];if(t&&t.status!=="done")del("tasks",t.id);if(m.calEventId){if(canCal(m))calDelete(m);else calElsewhere(m)}del("meetings",m.id);toast("Meeting deleted")}:null});
@@ -915,7 +923,7 @@ function shForm(s,cat){
   openForm({title:s?"Edit stakeholder":cat?`Add ${cat==='Other'?'stakeholder':cat.toLowerCase()}`:"Add stakeholder",values:s||{category:cat||"Partner",status:"active"},saveLabel:s?"Save changes":"Add stakeholder",
     fields:[{k:"name",label:"Organisation or person",required:true,ph:"e.g. Traficom"},
       {type:"row",fields:[{k:"category",label:"Category",type:"select",options:SH_CATS},{k:"status",label:"Relationship",type:"select",options:SH_STATUS}]},
-      {type:"row",fields:[{k:"owner",label:"Our lead",ph:"Who owns this relationship",opts:allPeople()},{k:"website",label:"Website"}]},
+      {type:"row",fields:[{pick:pickPeople(),k:"owner",label:"Our lead",ph:"Who owns this relationship",opts:allPeople()},{k:"website",label:"Website"}]},
       {k:"summary",label:"Key notes",type:"textarea",rows:5,ph:"Their role for us, what they care about, agreements, anything the team must remember"}],
     onSave:v=>{if(s)put("stakeholders",s.id,{...s,...v,updatedAt:nowIso()});else{const id=uid();put("stakeholders",id,{id,...v,contacts:[],createdAt:nowIso(),updatedAt:nowIso()});openSh(id)}},
     onDelete:s?()=>{for(const m of list("shmeetings").filter(m=>m.shId===s.id)){if(m.calEventId&&canCal(m))calDelete(m,"shmeetings");del("shmeetings",m.id)}for(const t of shTasks(s.id))del("shtasks",t.id);for(const l of shLogs(s.id))del("shlog",l.id);del("stakeholders",s.id);closeDrawer();toast(`Deleted ${s.name}`)}:null});
@@ -923,7 +931,7 @@ function shForm(s,cat){
 function shTaskForm(t,shId){
   const s=S.stakeholders[t?t.shId:shId];
   openForm({title:t?"Edit follow-up":"Add follow-up"+(s?` for ${s.name}`:""),values:t||{due:addDays(today(),7),owner:s?.owner||(UI.shPerson&&UI.shPerson!=="__none"?UI.shPerson:"")},saveLabel:t?"Save changes":"Add follow-up",
-    fields:[...(!t&&!s?[{k:"shId",label:"Stakeholder",type:"select",options:list("stakeholders").sort((a,b)=>String(a.name).localeCompare(String(b.name),"fi")).map(x=>[x.id,x.name])}]:[]),{k:"title",label:"What needs to happen",required:true},{type:"row",fields:[{k:"due",label:"Due date",type:"date"},{k:"owner",label:"Responsible person",opts:[...new Set([...allPeople(),...shPeople()])]}]},
+    fields:[...(!t&&!s?[{k:"shId",label:"Stakeholder",type:"select",options:list("stakeholders").sort((a,b)=>String(a.name).localeCompare(String(b.name),"fi")).map(x=>[x.id,x.name])}]:[]),{k:"title",label:"What needs to happen",required:true},{type:"row",fields:[{k:"due",label:"Due date",type:"date"},{pick:pickPeople(),k:"owner",label:"Responsible person",opts:[...new Set([...allPeople(),...shPeople()])]}]},
       {k:"notes",label:"Details",type:"textarea",rows:3},...(t?[{k:"status",label:"Status",type:"select",options:[["open","Pending"],["done","Done"]]}]:[])],
     onSave:v=>{if(t)put("shtasks",t.id,{...t,...v,doneAt:v.status==="done"?(t.doneAt||nowIso()):""});else{const ss=s||S.stakeholders[v.shId];if(ss){const id=uid();put("shtasks",id,{id,...v,shId:ss.id,status:"open",doneAt:"",createdAt:nowIso()})}}},
     onDelete:t?()=>del("shtasks",t.id):null});
@@ -932,7 +940,7 @@ function shLogForm(d,shId,mtg){
   const sid=d?d.shId:(mtg?mtg.shId:shId);
   openForm({title:d?"Edit discussion":mtg?"Log meeting notes":"Log discussion",values:d||(mtg?{date:mtg.date,kind:mtg.kind||"Meeting",title:mtg.title||"",attendees:mtg.attendees||""}:{date:today(),kind:"Meeting"}),saveLabel:d?"Save changes":"Save discussion",
     fields:[{type:"row",fields:[{k:"date",label:"Date",type:"date",required:true},{k:"kind",label:"Type",type:"select",options:KINDS}]},
-      {k:"title",label:"Topic",required:true},{k:"attendees",label:"Who was there"},
+      {k:"title",label:"Topic",required:true},{pick:pickAttend(),k:"attendees",label:"Who was there"},
       {k:"notes",label:"Key points",type:"textarea",rows:5},{k:"nextSteps",label:"Agreed next steps",type:"textarea",rows:3},
       ...(!d?[{k:"mkTask",label:"Create a follow-up from next steps",type:"select",options:[["yes","Yes, due in 7 days"],["no","No"]]}]:[])],
     onSave:v=>{const mk=v.mkTask;delete v.mkTask;
@@ -986,11 +994,11 @@ function shMeetingForm(m,shId){
     fields:[{type:"row",fields:[{k:"date",label:"Date",type:"date",required:true},{k:"time",label:"Time",type:"time24"}]},
       {type:"row",fields:[{k:"kind",label:"Type",type:"select",options:MKINDS},{k:"prepDays",label:"Prep follow-up",type:"number",hint:"(days before)"}]},
       {k:"title",label:"Topic",required:true,ph:"e.g. Partnership kick-off, workshop, quarterly review"},
-      {k:"attendees",label:"Who will be there",ph:(s.contacts||[]).length?s.contacts.map(c=>c.name).join(", "):"Names"},
+      {pick:pickAttend(),k:"attendees",label:"Who will be there",ph:(s.contacts||[]).length?s.contacts.map(c=>c.name).join(", "):"Names"},
       {k:"notes",label:"Agenda and goals",type:"textarea",rows:3,ph:"What we want out of this meeting"},
       {type:"row",fields:[{k:"duration",label:"Length",type:"select",options:[["30","30 min"],["45","45 min"],["60","1 hour"],["90","1 h 30 min"],["120","2 hours"]]},{k:"location",label:"Location",ph:"Address or video link"}]},
       ...(MCP&&!(m&&m.calEventId)?[{k:"invite",label:"Calendar invitation",type:"select",options:[["yes","Create Google Calendar event and send invitations"],["meet","Same, and add a Google Meet link"],["no","No calendar event"]]}]:!MCP&&!(m&&m.calEventId)?[{k:"invite",label:"Google Calendar",type:"select",options:[["link","Open a pre-filled event in Google Calendar after saving"],["no","No calendar event"]]}]:[]),
-      {k:"guests",label:"Invitation guests",type:"textarea",rows:2,ph:"name@partner.com, colleague@ioxio.com",hint:"(emails separated by commas; the stakeholder's contacts are filled in)"},
+      {pick:pickEmails(),k:"guests",label:"Invitation guests",type:"textarea",rows:2,ph:"name@partner.com, colleague@ioxio.com",hint:"(emails separated by commas; the stakeholder's contacts are filled in)"},
       ...(m?[{k:"status",label:"Status",type:"select",options:[["planned","Planned"],["held","Held"],["cancelled","Cancelled"]]}]:[])],
     onSave:v=>saveShMeeting(m,{...v,shId:sid}),
     onDelete:m?()=>{const t=S.shtasks[m.prepTaskId];if(t&&t.status!=="done")del("shtasks",t.id);if(m.calEventId){if(canCal(m))calDelete(m,"shmeetings");else calElsewhere(m)}del("shmeetings",m.id);toast("Meeting deleted")}:null});
@@ -1160,7 +1168,7 @@ function dealForm(d,custId){
       {k:"product",label:"Product or service",ph:"e.g. Dataspace licence, integration project"},
       {type:"row",fields:[{k:"stage",label:"Stage",type:"select",options:DSTAGES.map(s=>[s[0],s[1]])},{k:"probability",label:"Probability",type:"number",hint:"(%)"}]},
       {type:"row",fields:[{k:"oneOff",label:"One-off value",type:"number",hint:`(${S.round.currency||"EUR"})`,ph:"Project or set-up fee"},{k:"recurring",label:"Recurring value per year",type:"number",hint:`(${S.round.currency||"EUR"}/yr)`,ph:"Licence or service fee"}]},
-      {type:"row",fields:[{k:"closeDate",label:"Expected close",type:"date"},{k:"owner",label:"Our lead",opts:everyone()}]},
+      {type:"row",fields:[{k:"closeDate",label:"Expected close",type:"date"},{pick:pickPeople(),k:"owner",label:"Our lead",opts:everyone()}]},
       {k:"notes",label:"Key notes",type:"textarea",rows:4,ph:"Customer need, decision makers, competition, anything the team must remember"}],
     onSave:v=>{
       let cid=v.customerId;const nc=v.newCustomer;delete v.newCustomer;
@@ -1200,7 +1208,7 @@ function dlTaskForm(t,dealId){
   const d=S.deals[t?t.dealId:dealId];
   openForm({title:t?"Edit sales task":"Add sales task"+(d?` for ${d.name}`:""),values:t||{due:addDays(today(),7),owner:d?.owner||(UI.dlPerson&&UI.dlPerson!=="__none"?UI.dlPerson:"")},saveLabel:t?"Save changes":"Add follow-up",
     fields:[...(!dealId?[{k:"dealId",label:"Linked deal",type:"select",hint:"(optional)",options:[["","No deal, general sales task"],...list("deals").filter(x=>dealOpen(x)||(t&&x.id===t.dealId)).sort((a,b)=>String(a.name).localeCompare(String(b.name),"fi")).map(x=>[x.id,`${x.name}${custName(x)?" · "+custName(x):""}`])]}]:[]),
-      {k:"title",label:"What needs to happen",required:true},{type:"row",fields:[{k:"due",label:"Due date",type:"date"},{k:"owner",label:"Responsible person",opts:everyone()}]},
+      {k:"title",label:"What needs to happen",required:true},{type:"row",fields:[{k:"due",label:"Due date",type:"date"},{pick:pickPeople(),k:"owner",label:"Responsible person",opts:everyone()}]},
       {k:"notes",label:"Details",type:"textarea",rows:3},...(t?[{k:"status",label:"Status",type:"select",options:[["open","Pending"],["done","Done"]]}]:[])],
     onSave:v=>{if(t)put("dealtasks",t.id,{...t,...v,doneAt:v.status==="done"?(t.doneAt||nowIso()):""});else{const id=uid();put("dealtasks",id,{id,...v,dealId:d?d.id:(v.dealId||""),status:"open",doneAt:"",createdAt:nowIso()})}},
     onDelete:t?()=>del("dealtasks",t.id):null});
@@ -1209,7 +1217,7 @@ function dlLogForm(l,dealId){
   const did=l?l.dealId:dealId;
   openForm({title:l?"Edit discussion":"Log discussion",values:l||{date:today(),kind:"Meeting"},saveLabel:l?"Save changes":"Save discussion",
     fields:[{type:"row",fields:[{k:"date",label:"Date",type:"date",required:true},{k:"kind",label:"Type",type:"select",options:KINDS}]},
-      {k:"title",label:"Topic",required:true},{k:"attendees",label:"Who was there"},
+      {k:"title",label:"Topic",required:true},{pick:pickAttend(),k:"attendees",label:"Who was there"},
       {k:"notes",label:"Key points",type:"textarea",rows:5},{k:"nextSteps",label:"Agreed next steps",type:"textarea",rows:3},
       ...(!l?[{k:"mkTask",label:"Create a follow-up from next steps",type:"select",options:[["yes","Yes, due in 7 days"],["no","No"]]}]:[])],
     onSave:v=>{const mk=v.mkTask;delete v.mkTask;
@@ -1274,6 +1282,37 @@ document.addEventListener("change",e=>{const t=e.target,d=t&&t.dataset;if(!d)ret
   else if(d.ffrom){ff(d.ffrom).from=t.value;render()}else if(d.fto){ff(d.fto).to=t.value;render()}});
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-fclear],[data-fall]");if(!b)return;
   if(b.dataset.fclear){UI.f[b.dataset.fclear]={q:"",ent:"",range:"",from:"",to:"",kind:"",all:false}}else{const f=ff(b.dataset.fall);f.all=!f.all}render()});
+
+/* ---------- team ---------- */
+function teamMembers(){const t=list("team").filter(x=>x.name).sort((a,b)=>String(a.name).localeCompare(String(b.name),"fi",{sensitivity:"base"}));return t.length?t:everyone().map(n=>({id:"",name:n,email:""}))}
+function teamNames(){const m=new Map();for(const x of teamMembers())m.set(String(x.name).toLowerCase(),x.name);return [...m.values()]}
+const pickPeople=()=>({items:teamNames().map(n=>[n,n]),sep:" & "});
+const pickAttend=()=>({items:teamNames().map(n=>[n,n]),sep:", "});
+const pickEmails=()=>({items:teamMembers().filter(x=>x.email).map(x=>[x.name,x.email]),sep:", "});
+function pickRow(k,p){return p&&p.items.length?`<span class="pick" role="group" aria-label="Pick team members">${p.items.map(([l,v])=>`<button type="button" class="pickbtn" data-pick="${k}" data-val="${esc(v)}" data-sep="${esc(p.sep)}" aria-pressed="false" title="${esc(v)}">${esc(l)}</button>`).join("")}</span>`:""}
+function pickParts(v,sep){return sep===" & "?splitPeople(v):String(v||"").split(/\s*[,;\n]\s*/).map(x=>x.trim()).filter(Boolean)}
+function syncPicks(form){form.querySelectorAll("[data-pick]").forEach(b=>{const el=form.elements[b.dataset.pick];if(!el)return;const on=pickParts(el.value,b.dataset.sep).some(p=>p.toLowerCase()===b.dataset.val.toLowerCase());b.setAttribute("aria-pressed",String(on))})}
+function openTeam(){
+  const dlg=$("#dlg"),t=list("team").sort((a,b)=>String(a.name).localeCompare(String(b.name),"fi"));
+  const sugg=everyone().filter(n=>!t.some(x=>String(x.name).toLowerCase()===n.toLowerCase()));
+  dlg.innerHTML=`<div class="form"><h2>Team <span class="mint">members</span></h2><p class="meta" style="margin:0">Team members can be picked with one click as responsible persons, attendees and calendar invitation guests.</p>
+    ${t.length?`<ul class="clean">${t.map(x=>`<li class="task"><div class="tmain"><b style="color:var(--ink)">${esc(x.name)}</b><div class="meta">${x.fullName?`<span>${esc(x.fullName)}</span>`:""}${x.role?`<span>${esc(x.role)}</span>`:""}${x.email?`<span>${esc(x.email)}</span>`:`<span style="color:var(--warn)">No email</span>`}</div></div>${RO?"":`<button type="button" class="btn sm ghost" data-team-edit="${esc(x.id)}">Edit</button>`}</li>`).join("")}</ul>`:`<div class="empty">No team members yet.</div>`}
+    ${sugg.length&&!RO?`<div class="addsec">Names already used in Money Penny</div><div class="meta">${sugg.map(n=>`<button type="button" class="chip" data-team-add="${esc(n)}">+ ${esc(n)}</button>`).join("")}</div>`:""}
+    <div class="form-actions">${RO?"":`<button type="button" class="btn primary" data-team-new>Add member</button>`}<span class="sp"></span><button type="button" class="btn ghost" data-cancel>Close</button></div></div>`;
+  const go=f=>{dlg.close();setTimeout(f,20)};
+  dlg.querySelector("[data-cancel]").onclick=()=>dlg.close();
+  dlg.querySelector("[data-team-new]")?.addEventListener("click",()=>go(()=>teamForm()));
+  dlg.querySelectorAll("[data-team-edit]").forEach(b=>b.onclick=()=>go(()=>teamForm(S.team[b.dataset.teamEdit])));
+  dlg.querySelectorAll("[data-team-add]").forEach(b=>b.onclick=()=>go(()=>teamForm(null,b.dataset.teamAdd)));
+  if(!dlg.open)dlg.showModal();
+}
+function teamForm(x,name){
+  openForm({title:x?"Edit team member":"Add team member",values:x||{name:name||""},saveLabel:x?"Save changes":"Add member",
+    fields:[{type:"row",fields:[{k:"name",label:"Short name",required:true,hint:"(shown in lists, e.g. Kirsi)"},{k:"fullName",label:"Full name"}]},
+      {type:"row",fields:[{k:"email",label:"Email",type:"email",hint:"(for calendar invitations)"},{k:"role",label:"Role"}]}],
+    onSave:v=>{const id=x?x.id:uid();put("team",id,{...(x||{}),id,...v,updatedAt:nowIso()});setTimeout(openTeam,40)},
+    onDelete:x?()=>{del("team",x.id);setTimeout(openTeam,40)}:null});
+}
 
 /* ---------- google calendar ---------- */
 let MCP=null,VIEWER_ID="";const CAL="Google Calendar";
@@ -1442,13 +1481,14 @@ document.addEventListener("click",e=>{
   if(!a&&el.dataset.openSh){openSh(el.dataset.openSh);return}
   if(!a&&el.dataset.openDeal){openDeal(el.dataset.openDeal);return}
   const inv=S.investors[UI.openInv];
-  if(RO&&!["close-drawer","export"].includes(a)&&!a?.startsWith("edit")){if(a)return}
+  if(RO&&!["close-drawer","export","team"].includes(a)&&!a?.startsWith("edit")){if(a)return}
   if(a&&a.startsWith("sh-")){shAction(a,el);return}
   if(a&&a.startsWith("dl-")){dlAction(a,el);return}
   switch(a){
     case "close-drawer":closeDrawer();break;
     case "add-investor":if(!RO)investorForm();break;
     case "add-any":if(!RO)addChooser();break;
+    case "team":openTeam();break;
     case "edit-investor":if(!RO&&inv)investorForm(inv);break;
     case "add-contact":if(inv)contactForm(inv);break;
     case "edit-contact":if(!RO&&inv)contactForm(inv,Number(el.dataset.i));break;
