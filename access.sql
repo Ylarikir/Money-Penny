@@ -51,3 +51,50 @@ create policy "section delete" on public.mp_docs for delete to authenticated usi
 --   update public.mp_members set can_investor = false where email = 'kollega@ioxio.com';
 -- Tarkista kaikkien oikeudet:
 --   select email, can_investor, can_sales from public.mp_members order by email;
+
+-- ===================================================================
+-- 5) Projects-osio ja projektikohtainen jakaminen (lisätty myöhemmin)
+--    can_projects = pääsy Projects-osioon, is_admin = näkee kaikki projektit.
+--    Muut näkevät vain projektit, joiden jäsenlistalla (members) heidän sähköpostinsa on.
+alter table public.mp_members add column if not exists can_projects boolean not null default true;
+alter table public.mp_members add column if not exists is_admin boolean not null default false;
+
+create or replace function public.mp_can_doc(coll text, doc jsonb)
+returns boolean
+language sql stable security definer
+set search_path = public
+as $$
+  select case
+    when coll in ('projects','ptasks') then exists (
+      select 1 from public.mp_members m
+      where lower(m.email) = lower(coalesce(auth.jwt() ->> 'email', ''))
+        and m.can_projects
+        and (
+          m.is_admin
+          or (coll = 'projects' and coalesce(doc -> 'members', '[]'::jsonb) ? lower(m.email))
+          or (coll = 'ptasks' and exists (
+                select 1 from public.mp_docs p
+                where p.collection = 'projects' and p.id = doc ->> 'projectId'
+                  and coalesce(p.data -> 'members', '[]'::jsonb) ? lower(m.email)))
+        )
+    )
+    else public.mp_can(coll)
+  end;
+$$;
+
+drop policy if exists "section read"   on public.mp_docs;
+drop policy if exists "section insert" on public.mp_docs;
+drop policy if exists "section update" on public.mp_docs;
+drop policy if exists "section delete" on public.mp_docs;
+drop policy if exists "doc read"   on public.mp_docs;
+drop policy if exists "doc insert" on public.mp_docs;
+drop policy if exists "doc update" on public.mp_docs;
+drop policy if exists "doc delete" on public.mp_docs;
+create policy "doc read"   on public.mp_docs for select to authenticated using (public.mp_can_doc(collection, data));
+create policy "doc insert" on public.mp_docs for insert to authenticated with check (public.mp_can_doc(collection, data));
+create policy "doc update" on public.mp_docs for update to authenticated using (public.mp_can_doc(collection, data)) with check (public.mp_can_doc(collection, data));
+create policy "doc delete" on public.mp_docs for delete to authenticated using (public.mp_can_doc(collection, data));
+
+-- Esimerkkejä:
+--   Ylläpitäjä (näkee kaikki projektit):  update public.mp_members set is_admin = true where email = 'kirsi.ylarinne@ioxio.com';
+--   Ei pääsyä Projects-osioon:            update public.mp_members set can_projects = false where email = 'kollega@ioxio.com';

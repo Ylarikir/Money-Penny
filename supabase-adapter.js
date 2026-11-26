@@ -4,7 +4,8 @@
  * (collection().doc().set() / delete() / onSnapshot(), doc("round/main"),
  * orderBy().limit()), backed by one Supabase table: public.mp_docs.
  * Sign-in is by email and password; access is limited to emails listed in public.mp_members,
- * and each person sees only the sections (Investor, Sales) their row allows.
+ * and each person sees only the sections (Investor, Sales, Projects) their row allows.
+ * Projects are further limited to their members (admins see all), enforced in the database.
  */
 (function () {
   const cfg = window.MP_CONFIG || {};
@@ -200,8 +201,11 @@
   /* Reads the person's row in mp_members, including which sections they may use.
      Works before the access columns exist too (then everyone gets both sections). */
   async function getMember(email) {
-    let r = await sb.from("mp_members").select("email,can_investor,can_sales").eq("email", email).limit(1);
-    if (r.error && /can_investor|can_sales|column/i.test(r.error.message || "")) {
+    let r = await sb.from("mp_members").select("email,can_investor,can_sales,can_projects,is_admin").eq("email", email).limit(1);
+    if (r.error && /column/i.test(r.error.message || "")) {
+      r = await sb.from("mp_members").select("email,can_investor,can_sales").eq("email", email).limit(1);
+    }
+    if (r.error && /column/i.test(r.error.message || "")) {
       r = await sb.from("mp_members").select("email").eq("email", email).limit(1);
     }
     if (r.error) throw mapErr(r.error);
@@ -223,9 +227,14 @@
     userEmail = (session.user.email || "").toLowerCase();
     let member = null;
     try { member = await getMember(userEmail); } catch (e) { member = null; }
-    const access = member ? { investor: member.can_investor !== false, sales: member.can_sales !== false } : null;
-    const ok = !!access && (access.investor || access.sales);
-    if (ok) window.MP_ACCESS = access;
+    const access = member ? {
+      investor: member.can_investor !== false,
+      sales: member.can_sales !== false,
+      projects: member.can_projects !== false,
+      admin: member.is_admin === true
+    } : null;
+    const ok = !!access && (access.investor || access.sales || access.projects);
+    if (ok) { window.MP_ACCESS = access; window.MP_USER_EMAIL = String(userEmail || "").toLowerCase(); }
     if (!ok) {
       const el = overlay(`
         <h2>No access yet</h2>
