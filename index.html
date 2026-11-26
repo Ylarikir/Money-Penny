@@ -176,6 +176,7 @@ ul.clean{list-style:none;margin:0;padding:0}
 .fq:focus,.fsel:focus,.fdate:focus{border-color:var(--teal);outline:none}
 .fcount{margin:0 0 6px}
 .dealchip{border-color:var(--accent);font-size:12.5px;padding:2px 12px}
+.dealpick{border-color:var(--accent);font-weight:600;max-width:320px}
 .btable td{vertical-align:middle}.btable .bgroup td{background:var(--surface2);font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:7px 16px}
 .btable .num .meta{justify-content:flex-end}
 .sec-proj .inv-only{display:none!important}
@@ -1426,7 +1427,7 @@ function vProjectDetail(p){
   return `<div class="toolbar"><button class="btn sm ghost" data-act="pj-back">← All projects</button><span class="sp"></span><button class="btn sm w" data-act="pj-edit">Edit project</button></div>
   <div class="panel" style="margin-bottom:16px"><div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap"><h1 style="margin:0;font-size:26px;font-weight:800;text-transform:uppercase;color:var(--ink);line-height:1.15;flex:1;min-width:220px">${esc(p.name)}</h1>
     ${RO?pStatusPill(p.status||"planned"):`<select class="stage-sel" data-pstatus="${esc(p.id)}" aria-label="Project status">${PSTATUS.map(([k,l])=>`<option value="${k}" ${(p.status||"planned")===k?"selected":""}>${l}</option>`).join("")}</select>`}</div>
-    <div class="meta" style="margin-top:8px">${cust?`<button class="chip" data-open-sh="${esc(cust.id)}">${esc(cust.name)}</button>`:""}${d?`<button class="chip dealchip" data-open-deal="${esc(d.id)}">Sales deal: ${esc(d.name)} ↗</button>`:`<span class="meta" style="margin:0">No sales deal linked</span>`}${p.owner?`<span>Lead: ${esc(p.owner)}</span>`:""}<span>${s?fmtDate(s):"–"} → ${e?fmtDate(e):"–"}</span></div>
+    <div class="meta" style="margin-top:8px">${cust?`<button class="chip" data-open-sh="${esc(cust.id)}">${esc(cust.name)}</button>`:""}${d?`<button class="chip dealchip" data-open-deal="${esc(d.id)}">Sales deal: ${esc(d.name)} ↗</button>`:projDealPicker(p)}${p.owner?`<span>Lead: ${esc(p.owner)}</span>`:""}<span>${s?fmtDate(s):"–"} → ${e?fmtDate(e):"–"}</span></div>
     ${p.description?`<div class="summary" style="margin-top:10px">${linkify(p.description)}</div>`:""}
     <dl class="facts"><div><dt>Progress</dt><dd>${pr}%</dd></div>${d?`<div><dt>Contract value</dt><dd>${valTxt(d)}</dd></div>`:""}<div><dt>Items</dt><dd>${items.filter(t=>t.kind==="phase").length} phases · ${items.filter(t=>t.kind==="task").length} tasks · ${items.filter(t=>t.kind==="milestone").length} milestones</dd></div>
       <div><dt>Members</dt><dd>${memberNames(p).map(esc).join(", ")||"–"}</dd></div></dl>${progBar(pr,items.some(itemLate)&&p.status!=="done")}</div>
@@ -1533,7 +1534,7 @@ function ptaskForm(t,projectId,kind){
     onDelete:t?()=>{for(const x of projItems(pid))if(x.dependsOn===t.id||x.parentId===t.id)put("ptasks",x.id,{...x,dependsOn:x.dependsOn===t.id?"":x.dependsOn,parentId:x.parentId===t.id?"":x.parentId});del("ptasks",t.id)}:null});
 }
 function pjAction(a,el){const p=S.projects[UI.openProject];
-  switch(a){case "pj-add":projectForm();break;case "pj-from-deal":projectForm(null,el.dataset.deal||UI.openDeal);break;case "pj-edit":if(p)projectForm(p);break;
+  switch(a){case "pj-add":projectForm();break;case "pj-from-deal":projectForm(null,el.dataset.deal||UI.openDeal);break;case "pj-unlink":{const d=S.deals[el.dataset.deal];if(d)unlinkDeal(d);break}case "pj-edit":if(p)projectForm(p);break;
     case "pj-back":UI.openProject=null;render();break;
     case "pj-add-item":if(p)ptaskForm(null,p.id,el.dataset.kind);break;case "pj-edit-item":if(S.ptasks[el.dataset.id])ptaskForm(S.ptasks[el.dataset.id]);break}}
 /* gantt drag */
@@ -1551,10 +1552,23 @@ function applyTheme(t){t=t||"dark";const r=document.documentElement;r.dataset.th
 function cycleTheme(){const cur=document.documentElement.dataset.theme||"dark";applyTheme(cur==="dark"?"light":cur==="light"?"auto":"dark")}
 
 function dealProjectSection(d){const p=d.projectId&&S.projects[d.projectId];
-  if(p){const pr=projProgress(p);return `<section class="section"><div class="panel-head"><h2>Project</h2></div><button class="linkish" data-open-project="${esc(p.id)}" style="font-weight:700">${esc(p.name)} →</button><div class="meta">${pStatusPill(p.status||"planned")}<span>${pr}% complete</span></div>${progBar(pr,projItems(p.id).some(itemLate)&&p.status!=="done")}</section>`}
+  if(p){const pr=projProgress(p);return `<section class="section"><div class="panel-head"><h2>Project</h2>${!RO?`<span class="sp"></span><button class="btn sm ghost" data-act="pj-unlink" data-deal="${esc(d.id)}">Unlink</button>`:""}</div><button class="linkish" data-open-project="${esc(p.id)}" style="font-weight:700">${esc(p.name)} →</button><div class="meta">${pStatusPill(p.status||"planned")}<span>${pr}% complete</span></div>${progBar(pr,projItems(p.id).some(itemLate)&&p.status!=="done")}</section>`}
   if(d.projectId)return `<section class="section"><div class="panel-head"><h2>Project</h2></div><div class="meta">Linked to a project you are not a member of.</div></section>`;
-  if(d.stage==="won"&&mpAccess().projects&&!RO)return `<section class="section"><div class="panel-head"><h2>Project</h2><span class="sp"></span><button class="btn sm primary" data-act="pj-from-deal" data-deal="${esc(d.id)}">Create project</button></div><div class="meta">Turn this won deal into a delivery project with a schedule and team.</div></section>`;
-  return ""}
+  if(!mpAccess().projects||RO)return "";
+  const cands=list("projects").filter(x=>!x.dealId||!S.deals[x.dealId]).sort((a,b)=>((b.customerId===d.customerId)-(a.customerId===d.customerId))||String(a.name).localeCompare(String(b.name),"fi"));
+  return `<section class="section"><div class="panel-head"><h2>Project</h2><span class="sp"></span><button class="btn sm ${d.stage==="won"?"primary":""}" data-act="pj-from-deal" data-deal="${esc(d.id)}">Create project</button></div>
+    ${cands.length?`<select class="fsel" style="max-width:100%;width:100%" data-dealproj="${esc(d.id)}" aria-label="Link to an existing project"><option value="">Link to an existing project…</option>${cands.map(x=>`<option value="${esc(x.id)}">${esc(x.name)}${custName(x)?" · "+esc(custName(x)):""}${x.customerId===d.customerId?" (same customer)":""}</option>`).join("")}</select>`:`<div class="meta">${d.stage==="won"?"Turn this won deal into a delivery project with a schedule, team and budget.":"No project yet. Create one when the work starts, or link an existing project."}</div>`}</section>`}
+function projDealPicker(p){if(RO)return `<span class="meta" style="margin:0">No sales deal linked</span>`;
+  const cands=list("deals").filter(x=>!x.projectId||!S.projects[x.projectId]).sort((a,b)=>((b.customerId===p.customerId)-(a.customerId===p.customerId))||((b.stage==="won")-(a.stage==="won"))||String(a.name).localeCompare(String(b.name),"fi"));
+  if(!cands.length)return `<span class="meta" style="margin:0">No sales deal linked</span>`;
+  return `<select class="fsel dealpick" data-projdeal="${esc(p.id)}" aria-label="Link a sales deal"><option value="">+ Link a sales deal…</option>${cands.map(x=>`<option value="${esc(x.id)}">${x.stage==="won"?"✓ Won":dStageLabel(x.stage)} · ${esc(x.name)}${custName(x)?" · "+esc(custName(x)):""}</option>`).join("")}</select>`}
+function linkDealProject(d,p){
+  if(p.dealId&&p.dealId!==d.id&&S.deals[p.dealId])put("deals",p.dealId,{...S.deals[p.dealId],projectId:""});
+  if(d.projectId&&d.projectId!==p.id&&S.projects[d.projectId])put("projects",d.projectId,{...S.projects[d.projectId],dealId:""});
+  put("projects",p.id,{...S.projects[p.id],dealId:d.id,customerId:S.projects[p.id].customerId||d.customerId||"",updatedAt:nowIso()});
+  put("deals",d.id,{...S.deals[d.id],projectId:p.id,updatedAt:nowIso()});
+  toast(`Linked “${d.name}” to project “${p.name}”${pLines(p.id).some(l=>l.type==="revenue")||!(num(d.oneOff)||num(d.recurring))?"":". You can copy the deal value to the budget from the project page."}`)}
+function unlinkDeal(d){const p=S.projects[d.projectId];if(p)put("projects",p.id,{...p,dealId:"",updatedAt:nowIso()});put("deals",d.id,{...d,projectId:"",updatedAt:nowIso()});toast("Unlinked")}
 function shProjectsSection(s){const ps=list("projects").filter(p=>p.customerId===s.id);if(!ps.length)return "";
   return `<section class="section"><div class="panel-head"><h2>Projects</h2></div><ul class="clean">${ps.map(p=>`<li class="task"><div class="tmain"><button class="linkish" data-open-project="${esc(p.id)}" style="font-weight:700">${esc(p.name)}</button><div class="meta">${pStatusPill(p.status||"planned")}<span>${projProgress(p)}% complete</span></div></div><span class="due">${projSpan(p)[1]?fmtDate(projSpan(p)[1]):""}</span></li>`).join("")}</ul></section>`}
 
@@ -1844,6 +1858,8 @@ document.addEventListener("click",e=>{
 });
 document.addEventListener("change",e=>{
   const t=e.target;
+  if(t.dataset.dealproj){const d=S.deals[t.dataset.dealproj],p=S.projects[t.value];if(d&&p)linkDealProject(d,p);return}
+  if(t.dataset.projdeal){const p=S.projects[t.dataset.projdeal],d=S.deals[t.value];if(d&&p)linkDealProject(d,p);return}
   if(t.dataset.pstatus){const p=S.projects[t.dataset.pstatus];if(p)put("projects",p.id,{...p,status:t.value,updatedAt:nowIso()});return}
   if(t.dataset.ptdone){const x=S.ptasks[t.dataset.ptdone];if(x)savePtask(x,{progress:t.checked?100:0});return}
   if(t.dataset.dltask){const x=S.dealtasks[t.dataset.dltask];if(x)put("dealtasks",x.id,{...x,status:t.checked?"done":"open",doneAt:t.checked?nowIso():""});return}
